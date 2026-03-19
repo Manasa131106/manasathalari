@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/*@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-olive:#7a8f6b;
+  --color-beige: #F5F5F0;
+  --color-charcoal: #2E2E2E;
+  --color-gold: #C9A34E;
+}*/
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-olive: #6B7A5E;       /* deeper, richer */
+  --color-sage: #A3B18A;        /* NEW (hero gradient) */
+  --color-beige: #f8f6f2;       /* softer white */
+  --color-charcoal: #1f1f1f;    /* stronger contrast */
+  --color-gold: #d4a94d;        /* slightly brighter */
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-beige text-charcoal font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .text-huge {
+    font-size: clamp(5rem, 20vw, 15rem);
+    line-height: 0.8;
+  }
+  .text-vertical {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+}
