@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
+import { Typewriter } from 'react-simple-typewriter';
 import { 
   ArrowUpRight, 
   Github, 
@@ -17,10 +18,111 @@ import {
   ArrowRight,
   ArrowLeft,
   Menu,
-  X
+  X,
+  Send,
+  CheckCircle2,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+// --- Validation Schema ---
+const contactSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  message: z.string().min(10, 'Message must be at least 10 characters'),
+});
+
+type ContactFormData = z.infer<typeof contactSchema>;
 
 // --- Components ---
+
+const ScrollProgress = () => {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-1 bg-gold z-[100] origin-left"
+      style={{ scaleX }}
+    />
+  );
+};
+
+const CustomCursor = () => {
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleMouseOver = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).tagName === 'A' || (e.target as HTMLElement).tagName === 'BUTTON' || (e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
+        setIsHovering(true);
+      } else {
+        setIsHovering(false);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseover', handleMouseOver);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseover', handleMouseOver);
+    };
+  }, []);
+
+  return (
+    <motion.div
+      className="fixed top-0 left-0 w-6 h-6 rounded-full border-2 border-gold pointer-events-none z-[9999] hidden md:block"
+      animate={{
+        x: mousePos.x - 12,
+        y: mousePos.y - 12,
+        scale: isHovering ? 2.5 : 1,
+        backgroundColor: isHovering ? 'rgba(201, 163, 78, 0.2)' : 'transparent',
+      }}
+      transition={{ type: 'spring', stiffness: 500, damping: 28, mass: 0.5 }}
+    />
+  );
+};
+
+const FloatingShapes = () => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {[...Array(6)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full bg-beige/10"
+          style={{
+            width: Math.random() * 300 + 100,
+            height: Math.random() * 300 + 100,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            x: [0, Math.random() * 100 - 50, 0],
+            y: [0, Math.random() * 100 - 50, 0],
+            rotate: [0, 360],
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: Math.random() * 10 + 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
 const ScrollingText = ({ text }: { text: string }) => {
   return (
@@ -49,11 +151,37 @@ const ScrollingText = ({ text }: { text: string }) => {
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('home');
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -70% 0px',
+      threshold: 0
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const sections = ['home', 'about', 'education', 'hackathons', 'skills', 'gallery', 'contact'];
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      observer.disconnect();
+    };
   }, []);
 
   const navLinks = [
@@ -69,7 +197,7 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-beige/80 backdrop-blur-md py-4 shadow-sm' : 'py-8'}`}>
       <div className="container mx-auto px-6 flex justify-between items-center">
-        <a href="#home" className="text-xl font-black tracking-tighter">MANASA.</a>
+        <a href="#home" className="text-xl font-black tracking-tighter hover:text-gold transition-colors">MANASA.</a>
         
         {/* Desktop Nav */}
         <div className="hidden md:flex space-x-12">
@@ -77,15 +205,16 @@ const Navbar = () => {
             <a 
               key={link.name} 
               href={link.href} 
-              className="text-sm font-medium uppercase tracking-widest hover:text-olive transition-colors"
+              className={`relative text-sm font-medium uppercase tracking-widest transition-colors group ${activeSection === link.href.slice(1) ? 'text-olive' : 'hover:text-olive'}`}
             >
               {link.name}
+              <span className={`absolute -bottom-1 left-0 h-[2px] bg-gold transition-all duration-300 ${activeSection === link.href.slice(1) ? 'w-full' : 'w-0 group-hover:w-full'}`} />
             </a>
           ))}
         </div>
 
         {/* Mobile Toggle */}
-        <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+        <button className="md:hidden p-2 hover:bg-charcoal/5 rounded-full transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
           {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
@@ -94,10 +223,10 @@ const Navbar = () => {
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 w-full bg-beige shadow-xl md:hidden"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="absolute top-full left-0 w-full bg-beige shadow-xl md:hidden overflow-hidden"
           >
             <div className="flex flex-col p-6 space-y-4 items-center text-center">
               {navLinks.map((link) => (
@@ -105,7 +234,7 @@ const Navbar = () => {
                   key={link.name} 
                   href={link.href} 
                   onClick={() => setIsMenuOpen(false)}
-                  className="text-lg font-bold uppercase tracking-widest border-b border-charcoal/10 pb-2"
+                  className={`text-lg font-bold uppercase tracking-widest pb-2 transition-colors ${activeSection === link.href.slice(1) ? 'text-olive border-b-2 border-gold' : 'border-b border-charcoal/10'}`}
                 >
                   {link.name}
                 </a>
@@ -122,46 +251,92 @@ const Hero = () => {
   return (
     <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive text-beige">
       <ScrollingText text="MANASA THALARI" />
+      <FloatingShapes />
       
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col items-center text-center">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 3, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="flex space-x-8 mb-8 text-xs font-bold uppercase tracking-[0.3em]"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex flex-wrap justify-center gap-4 md:gap-8 mb-8 text-xs font-bold uppercase tracking-[0.3em]"
           >
-            <span>Data Analysis Learner</span>
-            <span className="text-gold">•</span>
-            <span>Working on Projects</span>
-            <span className="text-gold">•</span>
-            <span>Skills in Progress</span>
+            <span className="text-gold">
+              <Typewriter
+                words={['Data Analysis Learner', 'Working on Projects', 'Skills in Progress']}
+                loop={0}
+                cursor
+                cursorStyle='_'
+                typeSpeed={80}
+                deleteSpeed={50}
+                delaySpeed={2000}
+              />
+            </span>
           </motion.div>
 
           <motion.h1 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
             className="text-huge font-black tracking-tighter mb-[-2vw] select-none relative z-20"
           >
             Manasa
           </motion.h1>
 
           <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5, duration: 1 }}
-            className="relative w-full max-w-md h-auto overflow-hidden rounded-2xl shadow-2xl z-0"
+            initial={{ opacity: 0, scale: 0.9, y: 50 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+            className="relative w-full max-w-md h-auto overflow-hidden rounded-2xl shadow-2xl z-0 group"
           >
-            <img 
+            <motion.img 
               src="https://i.ibb.co/8g39vtqf/my-pic.jpg" 
               alt="Manasa Portrait" 
-              className="w-full h-auto object-contain"
+              className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-105"
               referrerPolicy="no-referrer"
             />
           </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.8 }}
+            className="mt-12 flex gap-6"
+          >
+            <motion.a 
+              href="#hackathons"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-8 py-4 bg-gold text-charcoal font-bold uppercase tracking-widest rounded-full shadow-lg hover:shadow-gold/30 transition-shadow"
+            >
+              View Projects
+            </motion.a>
+            <motion.a 
+              href="#contact"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-8 py-4 border border-beige/30 text-beige font-bold uppercase tracking-widest rounded-full hover:bg-beige/10 transition-colors"
+            >
+              Let's Talk
+            </motion.a>
+          </motion.div>
         </div>
       </div>
+      
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.5, duration: 1 }}
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+      >
+        <span className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-40">Scroll</span>
+        <motion.div 
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <ChevronDown size={20} className="text-gold" />
+        </motion.div>
+      </motion.div>
     </section>
   );
 };
@@ -174,13 +349,14 @@ const About = () => {
   ];
 
   return (
-    <section id="about" className="py-24 md:py-40 bg-beige">
+    <section id="about" className="py-24 md:py-40 bg-beige overflow-hidden">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
           <motion.div 
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
             className="space-y-8"
           >
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter">About </h2>
@@ -204,11 +380,18 @@ const About = () => {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className="border-t border-charcoal/20 pt-8"
+                transition={{ delay: 0.2 + idx * 0.1, duration: 0.8 }}
+                whileHover={{ y: -5, color: '#d4a94d' }}
+                className="border-t border-charcoal/20 pt-8 group cursor-default"
               >
-                <div className="text-3xl md:text-4xl font-black mb-2 leading-tight">{stat.value}</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60">{stat.label}</div>
+                <motion.div 
+                  initial={{ scale: 0.8 }}
+                  whileInView={{ scale: 1 }}
+                  className="text-3xl md:text-4xl font-black mb-2 leading-tight group-hover:scale-110 transition-transform origin-left"
+                >
+                  {stat.value}
+                </motion.div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60 group-hover:text-gold transition-colors">{stat.label}</div>
               </motion.div>
             ))}
           </div>
@@ -237,12 +420,18 @@ const Hackathons = () => {
   return (
     <section id="hackathons" className="py-24 md:py-40 bg-beige border-t border-charcoal/10">
       <div className="container mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8 }}
+          className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8"
+        >
           <div className="max-w-xl">
             <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">Hackathons</h2>
             <p className="text-charcoal/60">I actively participate in hackathons to challenge my thinking, collaborate with others, and build solutions under pressure. These experiences help me learn faster, adapt quickly, and turn ideas into real outcomes.</p>
           </div>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {projects.map((project, idx) => (
@@ -250,34 +439,44 @@ const Hackathons = () => {
               key={idx}
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: idx * 0.2, duration: 0.8 }}
+              whileHover={{ y: -10 }}
               className="group cursor-pointer"
             >
-              <div className="relative aspect-[4/5] overflow-hidden rounded-2xl mb-6 bg-charcoal/5">
-                <img 
+              <div className="relative aspect-[4/5] overflow-hidden rounded-2xl mb-6 bg-charcoal/5 shadow-lg group-hover:shadow-2xl transition-all duration-500">
+                <motion.img 
                   src={project.image} 
                   alt={project.title} 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-olive/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <div className="bg-beige text-charcoal p-4 rounded-full">
+                  <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    whileHover={{ scale: 1.1, opacity: 1 }}
+                    className="bg-beige text-charcoal p-4 rounded-full shadow-xl"
+                  >
                     <ArrowUpRight size={32} />
-                  </div>
+                  </motion.div>
                 </div>
               </div>
-              <h3 className="text-2xl font-black mb-1">{project.title}</h3>
+              <h3 className="text-2xl font-black mb-1 group-hover:text-gold transition-colors">{project.title}</h3>
               <p className="text-sm font-bold uppercase tracking-widest text-charcoal/50">{project.category}</p>
             </motion.div>
           ))}
         </div>
 
-        <div className="mt-24 text-center max-w-3xl mx-auto">
-          <p className="italic text-charcoal/60 leading-relaxed">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="mt-24 text-center max-w-3xl mx-auto"
+        >
+          <p className="italic text-charcoal/60 leading-relaxed text-lg">
             "Each hackathon pushes me beyond my limits—shaping how I think, build, and solve problems in real-world situations."
           </p>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -317,10 +516,16 @@ const Education = () => {
   return (
     <section id="education" className="py-24 md:py-40 bg-beige border-t border-charcoal/10">
       <div className="container mx-auto px-6">
-        <div className="mb-24 max-w-3xl">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="mb-24 max-w-3xl"
+        >
           <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase">Education</h2>
           <p className="text-charcoal/60 text-lg">My academic journey has shaped my foundation in learning, discipline, and problem-solving, guiding me step by step toward my career in technology.</p>
-        </div>
+        </motion.div>
 
         <div className="space-y-32">
           {education.map((edu, idx) => (
@@ -328,12 +533,15 @@ const Education = () => {
               key={idx}
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8, delay: 0.2 }}
               className={`flex flex-col ${idx % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} gap-12 lg:gap-24 items-center`}
             >
               {/* Image Side */}
-              <div className="w-full lg:w-1/2">
+              <motion.div 
+                whileHover={{ scale: 1.02 }}
+                className="w-full lg:w-1/2"
+              >
                 <div className="relative aspect-[16/10] overflow-hidden rounded-3xl shadow-2xl group">
                   <img 
                     src={edu.image} 
@@ -343,13 +551,18 @@ const Education = () => {
                   />
                   <div className="absolute inset-0 bg-olive/10 group-hover:bg-transparent transition-colors duration-300" />
                 </div>
-              </div>
+              </motion.div>
 
               {/* Content Side */}
               <div className="w-full lg:w-1/2 space-y-6">
-                <div className="inline-block px-4 py-2 bg-olive text-beige rounded-full text-sm font-bold uppercase tracking-widest">
+                <motion.div 
+                  initial={{ x: idx % 2 === 0 ? 20 : -20, opacity: 0 }}
+                  whileInView={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="inline-block px-4 py-2 bg-olive text-beige rounded-full text-sm font-bold uppercase tracking-widest shadow-lg"
+                >
                   {edu.icon} {edu.title}
-                </div>
+                </motion.div>
                 <div className="space-y-2">
                   <h3 className="text-3xl md:text-4xl font-black">{edu.institution}</h3>
                   <p className="text-lg font-bold text-olive/70">{edu.location}</p>
@@ -370,53 +583,83 @@ const Skills = () => {
   const specialSkills = ["Critical Thinking", "Creative Thinking"];
 
   return (
-    <section id="skills" className="py-24 md:py-40 bg-olive text-beige">
+    <section id="skills" className="py-24 md:py-40 bg-olive text-beige overflow-hidden">
       <div className="container mx-auto px-6">
-        <div className="mb-20 max-w-3xl">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="mb-20 max-w-3xl"
+        >
           <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-8">Skills</h2>
           <div className="space-y-4 text-lg opacity-80 leading-relaxed">
             <p>I’m building a strong foundation in technical tools while continuously improving my ability to think, analyze, and solve problems effectively.</p>
             <p>Along with technical knowledge, I focus on developing personal skills that enhance creativity and decision-making.</p>
           </div>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Technical Skills Card */}
           <motion.div 
-            initial={{ opacity: 0, x: -30 }}
+            initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="p-10 rounded-3xl border border-beige/10 bg-beige/5 space-y-8"
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            whileHover={{ y: -10 }}
+            className="p-10 rounded-3xl border border-beige/10 bg-beige/5 space-y-8 shadow-xl hover:shadow-2xl transition-all duration-500"
           >
             <div className="flex items-center space-x-4">
-              <span className="text-2xl">🔹</span>
+              <motion.span 
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="text-2xl"
+              >
+                🔹
+              </motion.span>
               <h3 className="text-3xl font-black uppercase tracking-tighter">Technical Skills</h3>
             </div>
             <div className="flex flex-wrap gap-4">
               {technicalSkills.map((skill, idx) => (
-                <div key={idx} className="px-6 py-3 rounded-xl border border-beige/20 text-xl font-bold hover:bg-beige hover:text-olive transition-all cursor-default">
+                <motion.div 
+                  key={idx} 
+                  whileHover={{ scale: 1.1, backgroundColor: '#f8f6f2', color: '#6B7A5E' }}
+                  className="px-6 py-3 rounded-xl border border-beige/20 text-xl font-bold transition-all cursor-default"
+                >
                   {skill}
-                </div>
+                </motion.div>
               ))}
             </div>
           </motion.div>
 
           {/* Special Skills Card */}
           <motion.div 
-            initial={{ opacity: 0, x: 30 }}
+            initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="p-10 rounded-3xl border border-beige/10 bg-beige/5 space-y-8"
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            whileHover={{ y: -10 }}
+            className="p-10 rounded-3xl border border-beige/10 bg-beige/5 space-y-8 shadow-xl hover:shadow-2xl transition-all duration-500"
           >
             <div className="flex items-center space-x-4">
-              <span className="text-2xl">🔹</span>
+              <motion.span 
+                animate={{ rotate: [0, -10, 10, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="text-2xl"
+              >
+                🔹
+              </motion.span>
               <h3 className="text-3xl font-black uppercase tracking-tighter">Special Skills</h3>
             </div>
             <div className="flex flex-wrap gap-4">
               {specialSkills.map((skill, idx) => (
-                <div key={idx} className="px-6 py-3 rounded-xl border border-beige/20 text-xl font-bold hover:bg-beige hover:text-olive transition-all cursor-default">
+                <motion.div 
+                  key={idx} 
+                  whileHover={{ scale: 1.1, backgroundColor: '#f8f6f2', color: '#6B7A5E' }}
+                  className="px-6 py-3 rounded-xl border border-beige/20 text-xl font-bold transition-all cursor-default"
+                >
                   {skill}
-                </div>
+                </motion.div>
               ))}
             </div>
           </motion.div>
@@ -449,27 +692,37 @@ const Gallery = () => {
   ];
 
   return (
-    <section id="gallery" className="py-24 md:py-40 bg-beige border-t border-charcoal/10">
+    <section id="gallery" className="py-24 md:py-40 bg-beige border-t border-charcoal/10 overflow-hidden">
       <div className="container mx-auto px-6">
-        <div className="mb-20 max-w-3xl">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="mb-20 max-w-3xl"
+        >
           <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-8">Gallery</h2>
           <div className="space-y-4 text-charcoal/60 text-lg leading-relaxed">
             <p>A glimpse into my journey—capturing moments of learning, experiences, and growth beyond just academics.</p>
             <p>Each image reflects a story, a memory, or a step forward in my personal and professional development.</p>
           </div>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {images.map((img, idx) => (
             <motion.div 
               key={idx}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: idx * 0.1, duration: 0.8 }}
               whileHover={{ scale: 1.02 }}
               onClick={() => setSelectedImg(img)}
               className="rounded-3xl overflow-hidden shadow-xl aspect-video cursor-pointer group relative"
             >
               <img src={img.url} alt={`Gallery ${idx}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
               <div className="absolute inset-0 bg-olive/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <span className="bg-beige text-charcoal px-6 py-2 rounded-full font-bold uppercase tracking-widest text-xs">View Details</span>
+                <span className="bg-beige text-charcoal px-6 py-2 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg">View Details</span>
               </div>
             </motion.div>
           ))}
@@ -487,15 +740,15 @@ const Gallery = () => {
             className="fixed inset-0 z-[100] bg-charcoal/95 backdrop-blur-md flex items-center justify-center p-6"
           >
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 50 }}
               onClick={(e) => e.stopPropagation()}
               className="relative max-w-5xl w-full bg-beige rounded-3xl overflow-hidden shadow-2xl"
             >
               <button 
                 onClick={() => setSelectedImg(null)}
-                className="absolute top-6 right-6 z-10 p-2 bg-charcoal text-beige rounded-full hover:bg-olive transition-colors"
+                className="absolute top-6 right-6 z-10 p-2 bg-charcoal text-beige rounded-full hover:bg-olive transition-colors shadow-lg"
               >
                 <X size={24} />
               </button>
@@ -520,10 +773,47 @@ const Gallery = () => {
 };
 
 const Footer = () => {
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert("Message sent successfully!");
-    (e.target as HTMLFormElement).reset();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ContactFormData>({
+    resolver: zodResolver(contactSchema),
+  });
+
+  const onSubmit = async (data: ContactFormData) => {
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      // Using Formspree for real form submission
+      // Replace 'mqeynwej' with your own Formspree ID if needed
+      const response = await fetch('https://formspree.io/f/mqeynwej', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        setSubmitStatus('success');
+        reset();
+      } else {
+        setSubmitStatus('error');
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+      // Reset status after 5 seconds
+      setTimeout(() => setSubmitStatus('idle'), 5000);
+    }
   };
 
   return (
@@ -532,7 +822,12 @@ const Footer = () => {
       
       <div className="container mx-auto px-6 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 mb-24">
-          <div className="space-y-12">
+          <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="space-y-12"
+          >
             <div className="space-y-6">
               <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-tight">
                 Every conversation starts with a simple hello...
@@ -541,65 +836,114 @@ const Footer = () => {
             </div>
             
             <div className="flex space-x-6">
-              <a href="mailto:manasa131106@gmail.com" className="p-4 rounded-full border border-beige/20 hover:bg-beige hover:text-charcoal transition-all">
+              <motion.a 
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.9 }}
+                href="mailto:manasa131106@gmail.com" 
+                className="p-4 rounded-full border border-beige/20 hover:bg-beige hover:text-charcoal transition-all shadow-lg hover:shadow-gold/20"
+              >
                 <Mail size={28} />
-              </a>
-              <a 
+              </motion.a>
+              <motion.a 
+                whileHover={{ scale: 1.1, rotate: -5 }}
+                whileTap={{ scale: 0.9 }}
                 href="https://www.linkedin.com/in/manasa-thalari-37015a329" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="p-4 rounded-full border border-beige/20 hover:bg-beige hover:text-charcoal transition-all"
+                className="p-4 rounded-full border border-beige/20 hover:bg-beige hover:text-charcoal transition-all shadow-lg hover:shadow-gold/20"
               >
                 <Linkedin size={28} />
-              </a>
+              </motion.a>
             </div>
-          </div>
+          </motion.div>
 
-          <div>
-            <form onSubmit={handleSubmit} className="space-y-6 bg-beige/5 p-8 md:p-12 rounded-3xl border border-beige/10">
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+          >
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-beige/5 p-8 md:p-12 rounded-3xl border border-beige/10 shadow-2xl relative">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">Name</label>
                   <input 
-                    required
+                    {...register('name')}
                     type="text" 
                     placeholder="Your Name"
-                    className="w-full bg-transparent border-b border-beige/20 py-3 focus:border-gold outline-none transition-colors text-lg"
+                    className={`w-full bg-transparent border-b py-3 outline-none transition-all text-lg ${errors.name ? 'border-red-500' : 'border-beige/20 focus:border-gold'}`}
                   />
+                  {errors.name && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">{errors.name.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">Email</label>
                   <input 
-                    required
+                    {...register('email')}
                     type="email" 
                     placeholder="your@email.com"
-                    className="w-full bg-transparent border-b border-beige/20 py-3 focus:border-gold outline-none transition-colors text-lg"
+                    className={`w-full bg-transparent border-b py-3 outline-none transition-all text-lg ${errors.email ? 'border-red-500' : 'border-beige/20 focus:border-gold'}`}
                   />
+                  {errors.email && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">{errors.email.message}</p>}
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest opacity-40">Message</label>
                 <textarea 
-                  required
+                  {...register('message')}
                   rows={4}
                   placeholder="Ideas start small—type yours here…..."
-                  className="w-full bg-transparent border-b border-beige/20 py-3 focus:border-gold outline-none transition-colors text-lg resize-none"
+                  className={`w-full bg-transparent border-b py-3 outline-none transition-all text-lg resize-none ${errors.message ? 'border-red-500' : 'border-beige/20 focus:border-gold'}`}
                 />
+                {errors.message && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">{errors.message.message}</p>}
               </div>
-              <button 
-                type="submit"
-                className="w-full py-5 bg-beige text-charcoal font-black uppercase tracking-widest rounded-2xl hover:bg-gold transition-colors flex items-center justify-center space-x-3 group"
-              >
-                <span>Send Message</span>
-                <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
-              </button>
-            </form>
-          </div>
-        </div>
 
+              <motion.button 
+                type="submit"
+                disabled={isSubmitting}
+                whileHover={{ scale: 1.02, backgroundColor: '#d4a94d', color: '#1a1a1a' }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full py-5 bg-beige/10 border border-beige/20 text-beige font-black uppercase tracking-[0.2em] rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="animate-spin" size={20} />
+                ) : (
+                  <>
+                    Send Message
+                    <Send size={18} />
+                  </>
+                )}
+              </motion.button>
+
+              <AnimatePresence>
+                {submitStatus === 'success' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute -bottom-16 left-0 right-0 flex items-center justify-center gap-2 text-emerald-400 font-bold uppercase tracking-widest text-xs"
+                  >
+                    <CheckCircle2 size={16} />
+                    Message sent successfully!
+                  </motion.div>
+                )}
+                {submitStatus === 'error' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute -bottom-16 left-0 right-0 flex items-center justify-center gap-2 text-red-400 font-bold uppercase tracking-widest text-xs"
+                  >
+                    <AlertCircle size={16} />
+                    Something went wrong. Please try again.
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </form>
+          </motion.div>
+        </div>
         <div className="border-t border-beige/10 pt-12 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-xs font-bold uppercase tracking-widest text-beige/40">© Manasa All rights reserved</p>
-          <button 
+          <motion.button 
+            whileHover={{ y: -5 }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest"
           >
@@ -607,7 +951,7 @@ const Footer = () => {
             <div className="p-2 rounded-full border border-beige/20 group-hover:bg-beige group-hover:text-charcoal transition-all">
               <ArrowUpRight size={16} />
             </div>
-          </button>
+          </motion.button>
         </div>
       </div>
     </footer>
@@ -616,7 +960,9 @@ const Footer = () => {
 
 export default function App() {
   return (
-    <div className="relative">
+    <div className="relative selection:bg-gold selection:text-charcoal">
+      <ScrollProgress />
+      <CustomCursor />
       <Navbar />
       <Hero />
       <About />
@@ -626,13 +972,14 @@ export default function App() {
       <Gallery />
       <Footer />
       
-      {/* Scroll Progress Dot Nav (Optional but nice) */}
+      {/* Scroll Progress Dot Nav */}
       <div className="fixed right-8 top-1/2 -translate-y-1/2 z-50 hidden xl:flex flex-col space-y-4">
         {['home', 'about', 'education', 'hackathons', 'skills', 'gallery', 'contact'].map((id) => (
-          <a 
+          <motion.a 
             key={id} 
             href={`#${id}`} 
-            className="w-2 h-2 rounded-full bg-charcoal/20 hover:bg-olive transition-all hover:scale-150"
+            whileHover={{ scale: 1.5 }}
+            className="w-2 h-2 rounded-full bg-charcoal/20 hover:bg-gold transition-all"
             title={id}
           />
         ))}
