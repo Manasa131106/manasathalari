@@ -12,19 +12,32 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   
-  --color-olive: #6B7A5E;       /* deeper, richer */
-  --color-sage: #A3B18A;        /* NEW (hero gradient) */
-  --color-beige: #f8f6f2;       /* softer white */
-  --color-charcoal: #1f1f1f;    /* stronger contrast */
-  --color-gold: #d4a94d;        /* slightly brighter */
+  --color-olive: var(--olive);
+  --color-sage: #A3B18A;
+  --color-beige: var(--beige);
+  --color-charcoal: var(--charcoal);
+  --color-gold: #d4a94d;
+}
+
+:root {
+  --olive: #6B7A5E;
+  --beige: #f8f6f2;
+  --charcoal: #1f1f1f;
+}
+
+.dark {
+  --olive: #A3B18A; /* Lighter sage/olive for dark mode text/accents */
+  --beige: #1a1a1a;
+  --charcoal: #f8f6f2;
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   body {
-    @apply bg-beige text-charcoal font-sans antialiased;
+    @apply bg-beige text-charcoal font-sans antialiased transition-colors duration-300;
   }
 }
 

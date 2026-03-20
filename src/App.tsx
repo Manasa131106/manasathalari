@@ -29,7 +29,9 @@ import {
   Brain,
   Lightbulb,
   Volume2,
-  VolumeX
+  VolumeX,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -152,7 +154,7 @@ const FloatingShapes = () => {
       {[...Array(6)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute rounded-full bg-beige/10"
+          className="absolute rounded-full bg-gold/5"
           style={{
             width: Math.random() * 300 + 100,
             height: Math.random() * 300 + 100,
@@ -200,7 +202,7 @@ const ScrollingText = ({ text }: { text: string }) => {
   );
 };
 
-const Navbar = ({ isMuted, setIsMuted, playSound }: { isMuted: boolean, setIsMuted: (v: boolean) => void, playSound: (s: string) => void }) => {
+const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: { isMuted: boolean, setIsMuted: (v: boolean) => void, playSound: (s: string) => void, isDarkMode: boolean, setIsDarkMode: (v: boolean) => void }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
@@ -263,7 +265,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound }: { isMuted: boolean, setIsMut
         </a>
         
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center space-x-12">
+        <div className="hidden md:flex items-center space-x-8 lg:space-x-12">
           {navLinks.map((link) => (
             <a 
               key={link.name} 
@@ -277,18 +279,35 @@ const Navbar = ({ isMuted, setIsMuted, playSound }: { isMuted: boolean, setIsMut
             </a>
           ))}
           
-          <button 
-            onClick={() => setIsMuted(!isMuted)}
-            onMouseEnter={() => playSound(SOUNDS.POP)}
-            className="p-2 rounded-full border border-charcoal/10 text-charcoal/60 hover:text-charcoal hover:bg-charcoal/5 transition-all"
-            title={isMuted ? "Unmute" : "Mute"}
-          >
-            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-          </button>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              onMouseEnter={() => playSound(SOUNDS.POP)}
+              className="p-2 rounded-full border border-charcoal/10 text-charcoal/60 hover:text-charcoal hover:bg-charcoal/5 transition-all"
+              title={isDarkMode ? "Light Mode" : "Dark Mode"}
+            >
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            <button 
+              onClick={() => setIsMuted(!isMuted)}
+              onMouseEnter={() => playSound(SOUNDS.POP)}
+              className="p-2 rounded-full border border-charcoal/10 text-charcoal/60 hover:text-charcoal hover:bg-charcoal/5 transition-all"
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Toggle */}
-        <div className="flex items-center space-x-4 md:hidden">
+        <div className="flex items-center space-x-2 md:hidden">
+          <button 
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="p-2 rounded-full border border-charcoal/10 text-charcoal/60"
+          >
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
           <button 
             onClick={() => setIsMuted(!isMuted)}
             className="p-2 rounded-full border border-charcoal/10 text-charcoal/60"
@@ -386,7 +405,7 @@ const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
 
 const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
   return (
-    <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive text-beige">
+    <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive dark:bg-beige text-beige dark:text-charcoal">
       <ScrollingText text="MANASA THALARI" />
       <FloatingShapes />
       
@@ -417,7 +436,7 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
             initial={{ opacity: 0, scale: 0.9, y: 50 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full max-w-md h-auto overflow-hidden rounded-2xl shadow-2xl z-0 group"
+            className="relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl z-0 group bg-charcoal/5 dark:bg-beige/5"
           >
             <motion.img 
               src="https://i.ibb.co/8g39vtqf/my-pic.jpg" 
@@ -536,18 +555,26 @@ const About = () => {
 };
 
 const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
-  const projects = [
+  const hackathons = [
     {
-      title: "Anurag University Hackathon",
-      category: "Problem Solving / Team Collaboration",
+      title: "Data Dynamo 2.0",
+      location: "Anurag University",
+      date: "Jan 30–31, 2026",
+      duration: "24 hrs",
+      role: "Frontend Developer",
       image: "https://i.ibb.co/kVpbHggc/h-anurag.jpg",
-      link: "#"
+      description: "Developed the AI-powered Environmental Issue Portal, focusing on frontend design to create a smooth, interactive interface. Collaborated with teammates on planning and workflow to deliver a functional web solution in 24 hours.",
+      tech: ["React", "Tailwind CSS", "Framer Motion", "AI Integration"]
     },
     {
-      title: "CMR Institute of Technology Hackathon",
-      category: "Innovation / Rapid Development",
+      title: "Hackforge 2026",
+      location: "Hackforge 2026, CMRIT Hyderabad",
+      date: "Mar 5–7, 2026",
+      duration: "48 hrs",
+      role: "Dashboard, Poster & Presentation Designer",
       image: "https://i.ibb.co/cSDVbfdK/h-cmrit.jpg",
-      link: "#"
+      description: "Designed dashboard visuals, posters, and presentation materials for a project enhancing transparency and accessibility in the MGNREGA system. Worked through all three hackathon rounds — Ideation, Prototype, Final Demo — to deliver an impactful solution.",
+      tech: ["UI/UX Design", "Data Visualization", "Presentation Design", "Prototyping"]
     }
   ];
 
@@ -567,38 +594,93 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {projects.map((project, idx) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto items-start">
+          {hackathons.map((hackathon, idx) => (
             <motion.div 
               key={idx}
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: idx * 0.2, duration: 0.8 }}
-              whileHover={{ y: -10 }}
+              className="relative w-full group"
+              style={{ perspective: '1500px' }}
               onMouseEnter={() => playSound(SOUNDS.POP)}
               onClick={() => playSound(SOUNDS.CLICK)}
-              className="group cursor-pointer"
             >
-              <div className="relative aspect-[4/5] overflow-hidden rounded-2xl mb-6 bg-charcoal/5 shadow-lg group-hover:shadow-2xl transition-all duration-500">
-                <motion.img 
-                  src={project.image} 
-                  alt={project.title} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-olive/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <motion.div 
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    whileHover={{ scale: 1.1, opacity: 1 }}
-                    className="bg-beige text-charcoal p-4 rounded-full shadow-xl"
-                  >
-                    <ArrowUpRight size={32} />
-                  </motion.div>
+              <motion.div
+                className="w-full relative transition-all duration-700"
+                style={{ transformStyle: 'preserve-3d' }}
+                whileHover={{ rotateY: 180 }}
+              >
+                {/* Front Side */}
+                <div 
+                  className="relative w-full rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 shadow-xl flex flex-col border border-charcoal/5"
+                  style={{ backfaceVisibility: 'hidden' }}
+                >
+                  <div className="relative overflow-hidden bg-charcoal/5 dark:bg-beige/5">
+                    <img 
+                      src={hackathon.image} 
+                      alt={hackathon.title} 
+                      className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-110"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-transparent to-transparent" />
+                    <div className="absolute bottom-6 left-6 right-6 text-left">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2 py-1 bg-gold text-charcoal text-[10px] font-bold uppercase tracking-widest rounded">
+                          {hackathon.duration}
+                        </span>
+                        <span className="text-beige/70 text-[10px] font-bold uppercase tracking-widest">
+                          {hackathon.date}
+                        </span>
+                      </div>
+                      <h3 className="text-beige text-3xl font-black leading-tight tracking-tighter">{hackathon.title}</h3>
+                    </div>
+                  </div>
+                  <div className="p-8 flex flex-col justify-center flex-grow text-left">
+                    <p className="text-gold font-bold uppercase tracking-[0.2em] text-[10px] mb-2">Role</p>
+                    <p className="text-charcoal font-black text-xl leading-tight mb-2">{hackathon.role}</p>
+                    <div className="flex items-center gap-2 text-charcoal/40">
+                      <span className="w-4 h-[1px] bg-charcoal/20" />
+                      <p className="text-xs font-bold uppercase tracking-widest">{hackathon.location}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-2xl font-black mb-1 group-hover:text-gold transition-colors">{project.title}</h3>
-              <p className="text-sm font-bold uppercase tracking-widest text-charcoal/50">{project.category}</p>
+
+                {/* Back Side */}
+                <div 
+                  className="absolute inset-0 w-full h-full rounded-3xl overflow-hidden bg-olive p-10 flex flex-col justify-center text-beige shadow-2xl border border-white/10 text-left"
+                  style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                >
+                  <div className="mb-8">
+                    <h3 className="text-3xl font-black mb-2 text-gold tracking-tighter">{hackathon.title}</h3>
+                    <p className="text-gold/60 text-[10px] font-bold uppercase tracking-[0.2em]">{hackathon.location}</p>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div>
+                      <p className="text-gold/40 text-[10px] font-bold uppercase tracking-[0.2em] mb-3">Project & Contributions</p>
+                      <p className="text-base leading-relaxed opacity-90 font-medium">{hackathon.description}</p>
+                    </div>
+                    
+                    <div>
+                      <p className="text-gold/40 text-[10px] font-bold uppercase tracking-[0.2em] mb-3">Technologies Used</p>
+                      <div className="flex flex-wrap gap-2">
+                        {hackathon.tech.map((t, i) => (
+                          <span key={i} className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[11px] font-bold uppercase tracking-wider text-gold">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-10 pt-8 border-t border-white/10 flex justify-between items-center">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/20">Details</span>
+                    <ArrowLeft size={16} className="text-gold/40" />
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
           ))}
         </div>
@@ -678,14 +760,14 @@ const Education = () => {
                 whileHover={{ scale: 1.02 }}
                 className="w-full lg:w-1/2"
               >
-                <div className="relative aspect-[16/10] overflow-hidden rounded-3xl shadow-2xl group">
+                <div className="relative overflow-hidden rounded-3xl shadow-2xl group bg-charcoal/5 dark:bg-beige/5">
                   <img 
                     src={edu.image} 
                     alt={edu.title} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-110"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-0 bg-olive/10 group-hover:bg-transparent transition-colors duration-300" />
+                  <div className="absolute inset-0 bg-olive/5 group-hover:bg-transparent transition-colors duration-300" />
                 </div>
               </motion.div>
 
@@ -726,7 +808,7 @@ const Skills = () => {
   ];
 
   return (
-    <section id="skills" className="py-24 md:py-40 bg-olive text-beige overflow-hidden">
+    <section id="skills" className="py-24 md:py-40 bg-olive dark:bg-beige text-beige dark:text-charcoal overflow-hidden">
       <div className="container mx-auto px-6">
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
@@ -766,8 +848,8 @@ const Skills = () => {
               {technicalSkills.map((skill, idx) => (
                 <motion.div 
                   key={idx} 
-                  whileHover={{ scale: 1.05, backgroundColor: '#f8f6f2', color: '#6B7A5E' }}
-                  className="px-5 py-3 rounded-xl border border-beige/20 text-lg font-bold transition-all cursor-default flex items-center gap-3"
+                  whileHover={{ scale: 1.05 }}
+                  className="px-5 py-3 rounded-xl border border-beige/20 text-lg font-bold transition-all cursor-default flex items-center gap-3 hover:bg-beige hover:text-olive"
                 >
                   <span className="text-gold opacity-70">{skill.icon}</span>
                   {skill.name}
@@ -800,8 +882,8 @@ const Skills = () => {
               {specialSkills.map((skill, idx) => (
                 <motion.div 
                   key={idx} 
-                  whileHover={{ scale: 1.05, backgroundColor: '#f8f6f2', color: '#6B7A5E' }}
-                  className="px-5 py-3 rounded-xl border border-beige/20 text-lg font-bold transition-all cursor-default flex items-center gap-3"
+                  whileHover={{ scale: 1.05 }}
+                  className="px-5 py-3 rounded-xl border border-beige/20 text-lg font-bold transition-all cursor-default flex items-center gap-3 hover:bg-beige hover:text-olive"
                 >
                   <span className="text-gold opacity-70">{skill.icon}</span>
                   {skill.name}
@@ -860,7 +942,7 @@ const Gallery = ({ playSound }: { playSound: (s: string) => void }) => {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           {images.map((img, idx) => (
             <motion.div 
               key={idx}
@@ -871,9 +953,9 @@ const Gallery = ({ playSound }: { playSound: (s: string) => void }) => {
               whileHover={{ scale: 1.02 }}
               onMouseEnter={() => playSound(SOUNDS.POP)}
               onClick={() => handleImageClick(img)}
-              className="rounded-3xl overflow-hidden shadow-xl aspect-video cursor-pointer group relative"
+              className="rounded-3xl overflow-hidden shadow-xl cursor-pointer group relative"
             >
-              <img src={img.url} alt={`Gallery ${idx}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
+              <img src={img.url} alt={`Gallery ${idx}`} className="w-full h-auto object-contain bg-charcoal/5 dark:bg-beige/5 transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
               <div className="absolute inset-0 bg-olive/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                 <span className="bg-beige text-charcoal px-6 py-2 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg">View Details</span>
               </div>
@@ -913,8 +995,8 @@ const Gallery = ({ playSound }: { playSound: (s: string) => void }) => {
               </button>
               
               <div className="flex flex-col lg:flex-row">
-                <div className="lg:w-2/3 aspect-video lg:aspect-auto">
-                  <img src={selectedImg.url} alt="Selected" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <div className="lg:w-2/3">
+                  <img src={selectedImg.url} alt="Selected" className="w-full h-auto object-contain" referrerPolicy="no-referrer" />
                 </div>
                 <div className="lg:w-1/3 p-10 flex flex-col justify-center space-y-6">
                   <h4 className="text-xs font-bold uppercase tracking-[0.3em] text-olive">Moment Details</h4>
@@ -979,7 +1061,7 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
   };
 
   return (
-    <footer id="contact" className="relative pt-24 md:pt-40 pb-12 bg-charcoal text-beige overflow-hidden">
+    <footer id="contact" className="relative pt-24 md:pt-40 pb-12 bg-charcoal dark:bg-beige text-beige dark:text-charcoal overflow-hidden">
       <ScrollingText text="MANASA THALARI" />
       
       <div className="container mx-auto px-6 relative z-10">
@@ -1019,6 +1101,18 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
                 className="p-4 rounded-full border border-beige/20 hover:bg-beige hover:text-charcoal transition-all shadow-lg hover:shadow-gold/20"
               >
                 <Linkedin size={28} />
+              </motion.a>
+              <motion.a 
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.9 }}
+                onMouseEnter={() => playSound(SOUNDS.POP)}
+                onClick={() => playSound(SOUNDS.CLICK)}
+                href="https://github.com/Manasa131106" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="p-4 rounded-full border border-beige/20 hover:bg-beige hover:text-charcoal transition-all shadow-lg hover:shadow-gold/20"
+              >
+                <Github size={28} />
               </motion.a>
             </div>
           </motion.div>
@@ -1131,12 +1225,31 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
 
 export default function App() {
   const { isMuted, setIsMuted, playSound } = useSound();
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('isDarkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('isDarkMode', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
 
   return (
-    <div className="relative selection:bg-gold selection:text-charcoal">
+    <div className="relative selection:bg-gold selection:text-charcoal transition-colors duration-300">
       <ScrollProgress />
       <CustomCursor />
-      <Navbar isMuted={isMuted} setIsMuted={setIsMuted} playSound={playSound} />
+      <Navbar 
+        isMuted={isMuted} 
+        setIsMuted={setIsMuted} 
+        playSound={playSound} 
+        isDarkMode={isDarkMode} 
+        setIsDarkMode={setIsDarkMode} 
+      />
       <Hero playSound={playSound} />
       <About />
       <Education />
