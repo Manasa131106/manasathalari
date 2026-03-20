@@ -39,12 +39,12 @@ import * as z from 'zod';
 
 // --- Sound Effects ---
 const SOUNDS = {
-  CHIME: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
-  TICK: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
-  TAP: 'https://assets.mixkit.co/active_storage/sfx/2567/2567-preview.mp3',
-  AMBIENT: 'https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3',
-  SUCCESS: 'https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3',
-  ERROR: 'https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3'
+  CHIME: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3',
+TICK: 'https://www.soundjay.com/buttons/sounds/button-16.mp3',
+TAP: 'https://www.soundjay.com/buttons/sounds/button-09.mp3',
+AMBIENT: 'https://www.soundjay.com/ambient/sounds/office-ambience-1.mp3',
+SUCCESS: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3',
+ERROR: 'https://www.soundjay.com/button/sounds/beep-07.mp3'
 };
 
 const useSound = () => {
@@ -71,14 +71,16 @@ const useSound = () => {
   const playSound = (soundUrl: string) => {
     if (isMuted) return;
     
+    const MAX_VOLUME = 0.3;
+    
     // Stop previous and fade out
     if (currentAudioRef.current) {
       const prevAudio = currentAudioRef.current;
       let volume = prevAudio.volume;
       const fadeOut = setInterval(() => {
-        if (volume > 0.1) {
-          volume -= 0.1;
-          prevAudio.volume = volume;
+        if (volume > 0.05) {
+          volume -= 0.05;
+          prevAudio.volume = Math.max(0, volume);
         } else {
           prevAudio.pause();
           prevAudio.currentTime = 0;
@@ -94,14 +96,14 @@ const useSound = () => {
       currentAudioRef.current = audio;
       
       audio.play().then(() => {
-        // Fade in
+        // Fade in to MAX_VOLUME
         let volume = 0;
         const fadeIn = setInterval(() => {
-          if (volume < 0.9) {
-            volume += 0.1;
+          if (volume < MAX_VOLUME - 0.05) {
+            volume += 0.05;
             audio.volume = volume;
           } else {
-            audio.volume = 1;
+            audio.volume = MAX_VOLUME;
             clearInterval(fadeIn);
           }
         }, 20);
