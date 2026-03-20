@@ -22,11 +22,58 @@ import {
   Send,
   CheckCircle2,
   AlertCircle,
-  Loader2
+  Loader2,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+
+// --- Sound Effects ---
+const SOUNDS = {
+  WHOOSH: 'https://assets.mixkit.co/sfx/preview/mixkit-fast-whoosh-1182.mp3',
+  POP: 'https://assets.mixkit.co/sfx/preview/mixkit-pop-up-something-1603.mp3',
+  CLICK: 'https://assets.mixkit.co/sfx/preview/mixkit-simple-click-sound-2579.mp3',
+  SUCCESS: 'https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-reward-952.mp3',
+  ERROR: 'https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3'
+};
+
+const useSound = () => {
+  const [isMuted, setIsMuted] = useState(() => {
+    const saved = localStorage.getItem('isMuted');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
+
+  useEffect(() => {
+    // Preload sounds
+    Object.values(SOUNDS).forEach((url) => {
+      const audio = new Audio(url);
+      audio.preload = 'auto';
+      audioRefs.current[url] = audio;
+    });
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('isMuted', JSON.stringify(isMuted));
+  }, [isMuted]);
+
+  const playSound = (soundUrl: string) => {
+    if (isMuted) return;
+    
+    const audio = audioRefs.current[soundUrl];
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play().catch(err => console.warn("Playback failed", err));
+    } else {
+      const newAudio = new Audio(soundUrl);
+      newAudio.play().catch(() => {});
+    }
+  };
+
+  return { isMuted, setIsMuted, playSound };
+};
 
 // --- Validation Schema ---
 const contactSchema = z.object({
@@ -148,7 +195,7 @@ const ScrollingText = ({ text }: { text: string }) => {
   );
 };
 
-const Navbar = () => {
+const Navbar = ({ isMuted, setIsMuted, playSound }: { isMuted: boolean, setIsMuted: (v: boolean) => void, playSound: (s: string) => void }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
@@ -194,29 +241,65 @@ const Navbar = () => {
     { name: 'Contact', href: '#contact' },
   ];
 
+  const handleNavClick = (href: string) => {
+    playSound(SOUNDS.CLICK);
+    setIsMenuOpen(false);
+  };
+
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-beige/80 backdrop-blur-md py-4 shadow-sm' : 'py-8'}`}>
       <div className="container mx-auto px-6 flex justify-between items-center">
-        <a href="#home" className="text-xl font-black tracking-tighter hover:text-gold transition-colors">MANASA.</a>
+        <a 
+          href="#home" 
+          onClick={() => playSound(SOUNDS.CLICK)}
+          className="text-xl font-black tracking-tighter hover:text-gold transition-colors"
+        >
+          MANASA.
+        </a>
         
         {/* Desktop Nav */}
-        <div className="hidden md:flex space-x-12">
+        <div className="hidden md:flex items-center space-x-12">
           {navLinks.map((link) => (
             <a 
               key={link.name} 
               href={link.href} 
+              onMouseEnter={() => playSound(SOUNDS.POP)}
+              onClick={() => handleNavClick(link.href)}
               className={`relative text-sm font-medium uppercase tracking-widest transition-colors group ${activeSection === link.href.slice(1) ? 'text-olive' : 'hover:text-olive'}`}
             >
               {link.name}
               <span className={`absolute -bottom-1 left-0 h-[2px] bg-gold transition-all duration-300 ${activeSection === link.href.slice(1) ? 'w-full' : 'w-0 group-hover:w-full'}`} />
             </a>
           ))}
+          
+          <button 
+            onClick={() => setIsMuted(!isMuted)}
+            onMouseEnter={() => playSound(SOUNDS.POP)}
+            className="p-2 rounded-full border border-charcoal/10 text-charcoal/60 hover:text-charcoal hover:bg-charcoal/5 transition-all"
+            title={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
         </div>
 
         {/* Mobile Toggle */}
-        <button className="md:hidden p-2 hover:bg-charcoal/5 rounded-full transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center space-x-4 md:hidden">
+          <button 
+            onClick={() => setIsMuted(!isMuted)}
+            className="p-2 rounded-full border border-charcoal/10 text-charcoal/60"
+          >
+            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          </button>
+          <button 
+            className="p-2 hover:bg-charcoal/5 rounded-full transition-colors" 
+            onClick={() => {
+              setIsMenuOpen(!isMenuOpen);
+              playSound(SOUNDS.CLICK);
+            }}
+          >
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -233,7 +316,7 @@ const Navbar = () => {
                 <a 
                   key={link.name} 
                   href={link.href} 
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => handleNavClick(link.href)}
                   className={`text-lg font-bold uppercase tracking-widest pb-2 transition-colors ${activeSection === link.href.slice(1) ? 'text-olive border-b-2 border-gold' : 'border-b border-charcoal/10'}`}
                 >
                   {link.name}
@@ -247,9 +330,9 @@ const Navbar = () => {
   );
 };
 
-const HeroName = () => {
+const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
   const defaultName = 'Manasa';
-  const translations = ['మాನసా', 'मनसा', 'மாணசா', 'ಮಾನದಸಾ'];
+  const translations = ['మానసా', 'मनसा', 'மாணசா', 'ಮಾನದಸಾ'];
   const [index, setIndex] = useState(-1); // -1 means default
   const [isHovered, setIsHovered] = useState(false);
 
@@ -257,14 +340,16 @@ const HeroName = () => {
     let interval: NodeJS.Timeout;
     if (isHovered) {
       setIndex(0);
+      playSound(SOUNDS.POP);
       interval = setInterval(() => {
         setIndex((prevIndex) => (prevIndex + 1) % translations.length);
+        playSound(SOUNDS.POP);
       }, 800);
     } else {
       setIndex(-1);
     }
     return () => clearInterval(interval);
-  }, [isHovered]);
+  }, [isHovered, playSound]);
 
   const currentName = index === -1 ? defaultName : translations[index];
 
@@ -274,16 +359,17 @@ const HeroName = () => {
       onMouseLeave={() => setIsHovered(false)}
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
+      onAnimationComplete={() => playSound(SOUNDS.WHOOSH)}
       transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
       className="text-huge font-black tracking-tighter mb-[-2vw] select-none relative z-20 cursor-default"
     >
       <AnimatePresence mode="wait">
         <motion.span
           key={currentName}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
+          initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }}
+          transition={{ duration: 0.4, ease: "easeInOut" }}
           className="inline-block"
         >
           {currentName}
@@ -293,7 +379,7 @@ const HeroName = () => {
   );
 };
 
-const Hero = () => {
+const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
   return (
     <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive text-beige">
       <ScrollingText text="MANASA THALARI" />
@@ -320,7 +406,7 @@ const Hero = () => {
             </span>
           </motion.div>
 
-          <HeroName />
+          <HeroName playSound={playSound} />
 
           <motion.div 
             initial={{ opacity: 0, scale: 0.9, y: 50 }}
@@ -346,6 +432,8 @@ const Hero = () => {
               href="#hackathons"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onMouseEnter={() => playSound(SOUNDS.POP)}
+              onClick={() => playSound(SOUNDS.CLICK)}
               className="px-8 py-4 bg-gold text-charcoal font-bold uppercase tracking-widest rounded-full shadow-lg hover:shadow-gold/30 transition-shadow"
             >
               View Projects
@@ -354,6 +442,8 @@ const Hero = () => {
               href="#contact"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onMouseEnter={() => playSound(SOUNDS.POP)}
+              onClick={() => playSound(SOUNDS.CLICK)}
               className="px-8 py-4 border border-beige/30 text-beige font-bold uppercase tracking-widest rounded-full hover:bg-beige/10 transition-colors"
             >
               Let's Talk
@@ -440,7 +530,7 @@ const About = () => {
   );
 };
 
-const Hackathons = () => {
+const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
   const projects = [
     {
       title: "Anurag University Hackathon",
@@ -481,6 +571,8 @@ const Hackathons = () => {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: idx * 0.2, duration: 0.8 }}
               whileHover={{ y: -10 }}
+              onMouseEnter={() => playSound(SOUNDS.POP)}
+              onClick={() => playSound(SOUNDS.CLICK)}
               className="group cursor-pointer"
             >
               <div className="relative aspect-[4/5] overflow-hidden rounded-2xl mb-6 bg-charcoal/5 shadow-lg group-hover:shadow-2xl transition-all duration-500">
@@ -708,7 +800,7 @@ const Skills = () => {
   );
 };
 
-const Gallery = () => {
+const Gallery = ({ playSound }: { playSound: (s: string) => void }) => {
   const [selectedImg, setSelectedImg] = useState<{ url: string; desc: string } | null>(null);
 
   const images = [
@@ -729,6 +821,11 @@ const Gallery = () => {
       desc: "ST. Tribe Workshop (July 26, 2025)My first step into ST. Tribe Workshop introduced me to the rhythm of the corporate world.It shifted my mindset—from learning in theory to understanding how things truly work beyond it."
     }
   ];
+
+  const handleImageClick = (img: { url: string; desc: string }) => {
+    setSelectedImg(img);
+    playSound(SOUNDS.CLICK);
+  };
 
   return (
     <section id="gallery" className="py-24 md:py-40 bg-beige border-t border-charcoal/10 overflow-hidden">
@@ -756,7 +853,8 @@ const Gallery = () => {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: idx * 0.1, duration: 0.8 }}
               whileHover={{ scale: 1.02 }}
-              onClick={() => setSelectedImg(img)}
+              onMouseEnter={() => playSound(SOUNDS.POP)}
+              onClick={() => handleImageClick(img)}
               className="rounded-3xl overflow-hidden shadow-xl aspect-video cursor-pointer group relative"
             >
               <img src={img.url} alt={`Gallery ${idx}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
@@ -775,7 +873,10 @@ const Gallery = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setSelectedImg(null)}
+            onClick={() => {
+              setSelectedImg(null);
+              playSound(SOUNDS.CLICK);
+            }}
             className="fixed inset-0 z-[100] bg-charcoal/95 backdrop-blur-md flex items-center justify-center p-6"
           >
             <motion.div 
@@ -786,7 +887,10 @@ const Gallery = () => {
               className="relative max-w-5xl w-full bg-beige rounded-3xl overflow-hidden shadow-2xl"
             >
               <button 
-                onClick={() => setSelectedImg(null)}
+                onClick={() => {
+                  setSelectedImg(null);
+                  playSound(SOUNDS.CLICK);
+                }}
                 className="absolute top-6 right-6 z-10 p-2 bg-charcoal text-beige rounded-full hover:bg-olive transition-colors shadow-lg"
               >
                 <X size={24} />
@@ -811,7 +915,7 @@ const Gallery = () => {
   );
 };
 
-const Footer = () => {
+const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
@@ -841,13 +945,16 @@ const Footer = () => {
 
       if (response.ok) {
         setSubmitStatus('success');
+        playSound(SOUNDS.SUCCESS);
         reset();
       } else {
         setSubmitStatus('error');
+        playSound(SOUNDS.ERROR);
       }
     } catch (error) {
       console.error('Form submission error:', error);
       setSubmitStatus('error');
+      playSound(SOUNDS.ERROR);
     } finally {
       setIsSubmitting(false);
       // Reset status after 5 seconds
@@ -878,6 +985,8 @@ const Footer = () => {
               <motion.a 
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 whileTap={{ scale: 0.9 }}
+                onMouseEnter={() => playSound(SOUNDS.POP)}
+                onClick={() => playSound(SOUNDS.CLICK)}
                 href="mailto:manasa131106@gmail.com" 
                 className="p-4 rounded-full border border-beige/20 hover:bg-beige hover:text-charcoal transition-all shadow-lg hover:shadow-gold/20"
               >
@@ -886,6 +995,8 @@ const Footer = () => {
               <motion.a 
                 whileHover={{ scale: 1.1, rotate: -5 }}
                 whileTap={{ scale: 0.9 }}
+                onMouseEnter={() => playSound(SOUNDS.POP)}
+                onClick={() => playSound(SOUNDS.CLICK)}
                 href="https://www.linkedin.com/in/manasa-thalari-37015a329" 
                 target="_blank" 
                 rel="noopener noreferrer" 
@@ -909,6 +1020,7 @@ const Footer = () => {
                     {...register('name')}
                     type="text" 
                     placeholder="Your Name"
+                    onFocus={() => playSound(SOUNDS.POP)}
                     className={`w-full bg-transparent border-b py-3 outline-none transition-all text-lg ${errors.name ? 'border-red-500' : 'border-beige/20 focus:border-gold'}`}
                   />
                   {errors.name && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">{errors.name.message}</p>}
@@ -919,6 +1031,7 @@ const Footer = () => {
                     {...register('email')}
                     type="email" 
                     placeholder="your@email.com"
+                    onFocus={() => playSound(SOUNDS.POP)}
                     className={`w-full bg-transparent border-b py-3 outline-none transition-all text-lg ${errors.email ? 'border-red-500' : 'border-beige/20 focus:border-gold'}`}
                   />
                   {errors.email && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">{errors.email.message}</p>}
@@ -930,6 +1043,7 @@ const Footer = () => {
                   {...register('message')}
                   rows={4}
                   placeholder="Ideas start small—type yours here…..."
+                  onFocus={() => playSound(SOUNDS.POP)}
                   className={`w-full bg-transparent border-b py-3 outline-none transition-all text-lg resize-none ${errors.message ? 'border-red-500' : 'border-beige/20 focus:border-gold'}`}
                 />
                 {errors.message && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">{errors.message.message}</p>}
@@ -940,6 +1054,8 @@ const Footer = () => {
                 disabled={isSubmitting}
                 whileHover={{ scale: 1.02, backgroundColor: '#d4a94d', color: '#1a1a1a' }}
                 whileTap={{ scale: 0.98 }}
+                onMouseEnter={() => playSound(SOUNDS.POP)}
+                onClick={() => playSound(SOUNDS.CLICK)}
                 className="w-full py-5 bg-beige/10 border border-beige/20 text-beige font-black uppercase tracking-[0.2em] rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
@@ -998,18 +1114,20 @@ const Footer = () => {
 };
 
 export default function App() {
+  const { isMuted, setIsMuted, playSound } = useSound();
+
   return (
     <div className="relative selection:bg-gold selection:text-charcoal">
       <ScrollProgress />
       <CustomCursor />
-      <Navbar />
-      <Hero />
+      <Navbar isMuted={isMuted} setIsMuted={setIsMuted} playSound={playSound} />
+      <Hero playSound={playSound} />
       <About />
       <Education />
-      <Hackathons />
+      <Hackathons playSound={playSound} />
       <Skills />
-      <Gallery />
-      <Footer />
+      <Gallery playSound={playSound} />
+      <Footer playSound={playSound} />
       
       {/* Scroll Progress Dot Nav */}
       <div className="fixed right-8 top-1/2 -translate-y-1/2 z-50 hidden xl:flex flex-col space-y-4">
@@ -1018,6 +1136,8 @@ export default function App() {
             key={id} 
             href={`#${id}`} 
             whileHover={{ scale: 1.5 }}
+            onMouseEnter={() => playSound(SOUNDS.POP)}
+            onClick={() => playSound(SOUNDS.CLICK)}
             className="w-2 h-2 rounded-full bg-charcoal/20 hover:bg-gold transition-all"
             title={id}
           />
