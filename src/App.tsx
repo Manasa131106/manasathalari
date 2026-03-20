@@ -23,6 +23,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Terminal,
+  Code2,
+  DraftingCompass,
+  Brain,
+  Lightbulb,
   Volume2,
   VolumeX
 } from 'lucide-react';
@@ -710,8 +715,15 @@ const Education = () => {
 };
 
 const Skills = () => {
-  const technicalSkills = ["C", "Python", "CAD"];
-  const specialSkills = ["Critical Thinking", "Creative Thinking"];
+  const technicalSkills = [
+    { name: "C", icon: <Code2 size={18} /> },
+    { name: "Python", icon: <Terminal size={18} /> },
+    { name: "Auto CAD", icon: <DraftingCompass size={18} /> }
+  ];
+  const specialSkills = [
+    { name: "Critical Thinking", icon: <Brain size={18} /> },
+    { name: "Creative Thinking", icon: <Lightbulb size={18} /> }
+  ];
 
   return (
     <section id="skills" className="py-24 md:py-40 bg-olive text-beige overflow-hidden">
@@ -754,10 +766,12 @@ const Skills = () => {
               {technicalSkills.map((skill, idx) => (
                 <motion.div 
                   key={idx} 
-                  whileHover={{ scale: 1.1, backgroundColor: '#f8f6f2', color: '#6B7A5E' }}
-                  className="px-6 py-3 rounded-xl border border-beige/20 text-xl font-bold transition-all cursor-default"
+                  whileHover={{ scale: 1.05, backgroundColor: '#f8f6f2', color: '#6B7A5E' }}
+                  className="px-5 py-3 rounded-xl border border-beige/20 text-lg font-bold transition-all cursor-default flex items-center gap-3"
                 >
-                  {skill}
+                  <span className="text-gold opacity-70">{skill.icon}</span>
+                  {skill.name}
+                  <span className="text-gold opacity-70">{skill.icon}</span>
                 </motion.div>
               ))}
             </div>
@@ -786,10 +800,12 @@ const Skills = () => {
               {specialSkills.map((skill, idx) => (
                 <motion.div 
                   key={idx} 
-                  whileHover={{ scale: 1.1, backgroundColor: '#f8f6f2', color: '#6B7A5E' }}
-                  className="px-6 py-3 rounded-xl border border-beige/20 text-xl font-bold transition-all cursor-default"
+                  whileHover={{ scale: 1.05, backgroundColor: '#f8f6f2', color: '#6B7A5E' }}
+                  className="px-5 py-3 rounded-xl border border-beige/20 text-lg font-bold transition-all cursor-default flex items-center gap-3"
                 >
-                  {skill}
+                  <span className="text-gold opacity-70">{skill.icon}</span>
+                  {skill.name}
+                  <span className="text-gold opacity-70">{skill.icon}</span>
                 </motion.div>
               ))}
             </div>
