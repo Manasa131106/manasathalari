@@ -39,10 +39,11 @@ import * as z from 'zod';
 
 // --- Sound Effects ---
 const SOUNDS = {
-  WHOOSH: 'https://assets.mixkit.co/sfx/preview/mixkit-fast-whoosh-1182.mp3',
-  POP: 'https://assets.mixkit.co/sfx/preview/mixkit-pop-up-something-1603.mp3',
-  CLICK: 'https://assets.mixkit.co/sfx/preview/mixkit-simple-click-sound-2579.mp3',
-  SUCCESS: 'https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-reward-952.mp3',
+  CHIME: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
+  TICK: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
+  TAP: 'https://assets.mixkit.co/active_storage/sfx/2567/2567-preview.mp3',
+  AMBIENT: 'https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3',
+  SUCCESS: 'https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3',
   ERROR: 'https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3'
 };
 
@@ -52,6 +53,7 @@ const useSound = () => {
     return saved ? JSON.parse(saved) : false;
   });
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     // Preload sounds
@@ -69,13 +71,41 @@ const useSound = () => {
   const playSound = (soundUrl: string) => {
     if (isMuted) return;
     
+    // Stop previous and fade out
+    if (currentAudioRef.current) {
+      const prevAudio = currentAudioRef.current;
+      let volume = prevAudio.volume;
+      const fadeOut = setInterval(() => {
+        if (volume > 0.1) {
+          volume -= 0.1;
+          prevAudio.volume = volume;
+        } else {
+          prevAudio.pause();
+          prevAudio.currentTime = 0;
+          clearInterval(fadeOut);
+        }
+      }, 20);
+    }
+
     const audio = audioRefs.current[soundUrl];
     if (audio) {
       audio.currentTime = 0;
-      audio.play().catch(err => console.warn("Playback failed", err));
-    } else {
-      const newAudio = new Audio(soundUrl);
-      newAudio.play().catch(() => {});
+      audio.volume = 0;
+      currentAudioRef.current = audio;
+      
+      audio.play().then(() => {
+        // Fade in
+        let volume = 0;
+        const fadeIn = setInterval(() => {
+          if (volume < 0.9) {
+            volume += 0.1;
+            audio.volume = volume;
+          } else {
+            audio.volume = 1;
+            clearInterval(fadeIn);
+          }
+        }, 20);
+      }).catch(err => console.warn("Playback failed", err));
     }
   };
 
@@ -112,8 +142,15 @@ const ScrollProgress = () => {
 const CustomCursor = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
+    const checkTouch = () => {
+      setIsTouchDevice(window.matchMedia('(pointer: coarse)').matches);
+    };
+    checkTouch();
+    window.addEventListener('resize', checkTouch);
+
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
     };
@@ -129,10 +166,13 @@ const CustomCursor = () => {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseover', handleMouseOver);
     return () => {
+      window.removeEventListener('resize', checkTouch);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseover', handleMouseOver);
     };
   }, []);
+
+  if (isTouchDevice) return null;
 
   return (
     <motion.div
@@ -225,8 +265,16 @@ const FloatingShapes = ({ count = 6, color = "bg-gold/5" }: { count?: number, co
 const ParallaxWrapper = ({ children, offset = 20 }: { children: React.ReactNode, offset?: number }) => {
   const x = useSpring(0, { stiffness: 100, damping: 30 });
   const y = useSpring(0, { stiffness: 100, damping: 30 });
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   useEffect(() => {
+    const checkTouch = () => {
+      setIsTouchDevice(window.matchMedia('(pointer: coarse)').matches);
+    };
+    checkTouch();
+
+    if (isTouchDevice) return;
+
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
       const xPct = (e.clientX / innerWidth - 0.5) * offset;
@@ -237,7 +285,9 @@ const ParallaxWrapper = ({ children, offset = 20 }: { children: React.ReactNode,
 
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [offset, x, y]);
+  }, [offset, x, y, isTouchDevice]);
+
+  if (isTouchDevice) return <>{children}</>;
 
   return (
     <motion.div style={{ x, y }}>
@@ -286,7 +336,10 @@ const TiltWrapper = ({ children, intensity = 15 }: { children: React.ReactNode, 
   const rotateX = useTransform(y, [-0.5, 0.5], [intensity, -intensity]);
   const rotateY = useTransform(x, [-0.5, 0.5], [-intensity, intensity]);
 
+  const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isTouchDevice) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
@@ -302,6 +355,10 @@ const TiltWrapper = ({ children, intensity = 15 }: { children: React.ReactNode, 
     x.set(0);
     y.set(0);
   };
+
+  if (isTouchDevice) {
+    return <div className="relative transition-shadow duration-300 hover:shadow-2xl hover:shadow-gold/10 rounded-2xl">{children}</div>;
+  }
 
   return (
     <motion.div
@@ -333,10 +390,10 @@ const ScrollingText = ({ text }: { text: string }) => {
           }}
           className="flex whitespace-nowrap"
         >
-          <span className="text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
+          <span className="text-[20vw] md:text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
             {text} {text} {text} {text}
           </span>
-          <span className="text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
+          <span className="text-[20vw] md:text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
             {text} {text} {text} {text}
           </span>
         </motion.div>
@@ -427,7 +484,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
   ];
 
   const handleNavClick = (href: string) => {
-    playSound(SOUNDS.CLICK);
+    playSound(SOUNDS.TAP);
     setIsMenuOpen(false);
   };
 
@@ -436,7 +493,8 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
       <div className="container mx-auto px-6 flex justify-between items-center">
         <a 
           href="#home" 
-          onClick={() => playSound(SOUNDS.CLICK)}
+          onClick={() => playSound(SOUNDS.TAP)}
+          onMouseEnter={() => playSound(SOUNDS.TICK)}
           className="text-xl font-black tracking-tighter hover:text-gold transition-colors"
         >
           MANASA.
@@ -448,7 +506,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
             <a 
               key={link.name} 
               href={link.href} 
-              onMouseEnter={() => playSound(SOUNDS.POP)}
+              onMouseEnter={() => playSound(SOUNDS.TICK)}
               onClick={() => handleNavClick(link.href)}
               className={`relative text-sm font-medium uppercase tracking-widest transition-colors group ${activeSection === link.href.slice(1) ? (isScrolled ? 'text-olive' : 'text-gold') : (isScrolled ? 'hover:text-olive' : 'hover:text-gold')}`}
             >
@@ -460,7 +518,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
             <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              onMouseEnter={() => playSound(SOUNDS.POP)}
+              onMouseEnter={() => playSound(SOUNDS.TICK)}
               className={`p-2 rounded-full border transition-all ${isScrolled ? 'border-charcoal/10 text-charcoal/60 hover:text-charcoal hover:bg-charcoal/5' : 'border-beige/10 text-beige/60 hover:text-beige hover:bg-beige/5'}`}
               title={isDarkMode ? "Light Mode" : "Dark Mode"}
             >
@@ -469,7 +527,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
 
             <button 
               onClick={() => setIsMuted(!isMuted)}
-              onMouseEnter={() => playSound(SOUNDS.POP)}
+              onMouseEnter={() => playSound(SOUNDS.TICK)}
               className={`p-2 rounded-full border transition-all ${isScrolled ? 'border-charcoal/10 text-charcoal/60 hover:text-charcoal hover:bg-charcoal/5' : 'border-beige/10 text-beige/60 hover:text-beige hover:bg-beige/5'}`}
               title={isMuted ? "Unmute" : "Mute"}
             >
@@ -482,21 +540,24 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
         <div className="flex items-center space-x-2 md:hidden">
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
+            onMouseEnter={() => playSound(SOUNDS.TICK)}
             className={`p-2 rounded-full border transition-all ${isScrolled ? 'border-charcoal/10 text-charcoal/60' : 'border-beige/10 text-beige/60'}`}
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
           <button 
             onClick={() => setIsMuted(!isMuted)}
+            onMouseEnter={() => playSound(SOUNDS.TICK)}
             className={`p-2 rounded-full border transition-all ${isScrolled ? 'border-charcoal/10 text-charcoal/60' : 'border-beige/10 text-beige/60'}`}
           >
             {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
           </button>
           <button 
             className={`p-2 rounded-full transition-colors ${isScrolled ? 'hover:bg-charcoal/5' : 'hover:bg-beige/5'}`} 
+            onMouseEnter={() => playSound(SOUNDS.TICK)}
             onClick={() => {
               setIsMenuOpen(!isMenuOpen);
-              playSound(SOUNDS.CLICK);
+              playSound(SOUNDS.TAP);
             }}
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -518,6 +579,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
                 <a 
                   key={link.name} 
                   href={link.href} 
+                  onMouseEnter={() => playSound(SOUNDS.TICK)}
                   onClick={() => handleNavClick(link.href)}
                   className={`text-lg font-bold uppercase tracking-widest pb-2 transition-colors ${activeSection === link.href.slice(1) ? 'text-olive border-b-2 border-gold' : 'border-b border-charcoal/10'}`}
                 >
@@ -534,7 +596,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
 
 const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
   const defaultName = 'Manasa';
-  const translations = ['మానసా', 'मनसा', 'மாணசா', 'ಮಾನದಸಾ'];
+  const translations = ['మనసా', 'मनसा', 'மனசா', 'ಮನಸಾ', 'মনসা', 'मनसा', 'マナサ'];
   const [index, setIndex] = useState(-1); // -1 means default
   const [isHovered, setIsHovered] = useState(false);
 
@@ -542,10 +604,10 @@ const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
     let interval: NodeJS.Timeout;
     if (isHovered) {
       setIndex(0);
-      playSound(SOUNDS.POP);
+      playSound(SOUNDS.CHIME);
       interval = setInterval(() => {
         setIndex((prevIndex) => (prevIndex + 1) % translations.length);
-        playSound(SOUNDS.POP);
+        playSound(SOUNDS.CHIME);
       }, 800);
     } else {
       setIndex(-1);
@@ -561,16 +623,15 @@ const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
       onMouseLeave={() => setIsHovered(false)}
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      onAnimationComplete={() => playSound(SOUNDS.WHOOSH)}
       transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-      className="text-huge font-black tracking-tighter mb-[-2vw] select-none relative z-20 cursor-default"
+      className="text-huge font-black tracking-tighter select-none absolute top-0 left-1/2 -translate-x-1/2 z-20 cursor-default whitespace-nowrap text-white dark:text-gold transition-colors duration-300 pointer-events-auto"
     >
       <AnimatePresence mode="wait">
         <motion.span
           key={currentName}
-          initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
-          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }}
+          initial={{ opacity: 1, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 1, y: -20 }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
           className="inline-block"
         >
@@ -582,13 +643,17 @@ const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
 };
 
 const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
+  const { scrollY } = useScroll();
+  const y = useTransform(scrollY, [0, 500], [0, 100]);
+  const opacity = useTransform(scrollY, [0, 500], [1, 0]);
+
   return (
     <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive text-beige">
       <ScrollingText text="MANASA THALARI" />
       <FloatingShapes />
       
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="flex flex-col items-center text-center">
+      <motion.div style={{ y, opacity }} className="container mx-auto px-6 relative z-10">
+        <div className="flex flex-col items-center text-center relative">
           <ParallaxWrapper offset={30}>
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
@@ -610,25 +675,36 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
             </motion.div>
           </ParallaxWrapper>
 
-          <ParallaxWrapper offset={15}>
-            <HeroName playSound={playSound} />
-          </ParallaxWrapper>
+          <div className="relative w-full flex flex-col items-center">
+            {/* Image Layer - Lower Z-Index */}
+            <div className="relative z-0">
+              <TiltWrapper intensity={10}>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9, y: 50 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl group bg-charcoal/5 dark:bg-beige/5"
+                >
+                  <motion.img 
+                    src="https://i.ibb.co/8g39vtqf/my-pic.jpg" 
+                    alt="Manasa Portrait" 
+                    className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-[1.03]"
+                    referrerPolicy="no-referrer"
+                  />
+                </motion.div>
+              </TiltWrapper>
+            </div>
 
-          <TiltWrapper intensity={10}>
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 50 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-              className="relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl z-0 group bg-charcoal/5 dark:bg-beige/5"
-            >
-              <motion.img 
-                src="https://i.ibb.co/8g39vtqf/my-pic.jpg" 
-                alt="Manasa Portrait" 
-                className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-105"
-                referrerPolicy="no-referrer"
-              />
-            </motion.div>
-          </TiltWrapper>
+            {/* "Manasa" Text Layer - Absolute with Higher Z-Index */}
+            <div className="absolute top-[-5vw] md:top-[-4vw] left-0 w-full z-20">
+              <ParallaxWrapper offset={15}>
+                <div className="relative flex items-center justify-center">
+                  <h1 className="text-huge font-black tracking-tighter invisible select-none whitespace-nowrap">Manasa</h1>
+                  <HeroName playSound={playSound} />
+                </div>
+              </ParallaxWrapper>
+            </div>
+          </div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -644,8 +720,8 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
                 backgroundColor: "#e5b858"
               }}
               whileTap={{ scale: 0.95 }}
-              onMouseEnter={() => playSound(SOUNDS.POP)}
-              onClick={() => playSound(SOUNDS.CLICK)}
+              onMouseEnter={() => playSound(SOUNDS.TICK)}
+              onClick={() => playSound(SOUNDS.TAP)}
               className="px-8 py-4 bg-gold text-charcoal font-bold uppercase tracking-widest rounded-full shadow-lg transition-all"
             >
               View Projects
@@ -658,15 +734,15 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
                 boxShadow: "0 0 20px rgba(248, 246, 242, 0.1)"
               }}
               whileTap={{ scale: 0.95 }}
-              onMouseEnter={() => playSound(SOUNDS.POP)}
-              onClick={() => playSound(SOUNDS.CLICK)}
+              onMouseEnter={() => playSound(SOUNDS.TICK)}
+              onClick={() => playSound(SOUNDS.TAP)}
               className="px-8 py-4 border border-beige/30 text-beige font-bold uppercase tracking-widest rounded-full transition-all"
             >
               Let's Talk
             </motion.a>
           </motion.div>
         </div>
-      </div>
+      </motion.div>
       
       <motion.div 
         initial={{ opacity: 0 }}
@@ -783,8 +859,8 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
               transition={{ delay: idx * 0.2, duration: 0.8 }}
               className="relative w-full group"
               style={{ perspective: '1500px' }}
-              onMouseEnter={() => playSound(SOUNDS.POP)}
-              onClick={() => playSound(SOUNDS.CLICK)}
+              onMouseEnter={() => playSound(SOUNDS.TICK)}
+              onClick={() => playSound(SOUNDS.TAP)}
             >
               <motion.div
                 className="w-full relative transition-all duration-700"
@@ -919,7 +995,7 @@ const Education = () => {
           subtitle="My academic journey has shaped my foundation in learning, discipline, and problem-solving, guiding me step by step toward my career in technology."
         />
 
-        <div className="space-y-32">
+        <div className="space-y-24 md:space-y-32">
           {education.map((edu, idx) => (
             <motion.div 
               key={idx}
@@ -1088,7 +1164,7 @@ const Gallery = ({ playSound }: { playSound: (s: string) => void }) => {
 
   const handleImageClick = (img: { url: string; desc: string }) => {
     setSelectedImg(img);
-    playSound(SOUNDS.CLICK);
+    playSound(SOUNDS.TAP);
   };
 
   return (
@@ -1109,7 +1185,7 @@ const Gallery = ({ playSound }: { playSound: (s: string) => void }) => {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ delay: idx * 0.1, duration: 0.8 }}
-                  onMouseEnter={() => playSound(SOUNDS.POP)}
+                  onMouseEnter={() => playSound(SOUNDS.TICK)}
                   onClick={() => handleImageClick(img)}
                   className="rounded-3xl overflow-hidden shadow-xl cursor-pointer group relative"
                 >
@@ -1133,7 +1209,7 @@ const Gallery = ({ playSound }: { playSound: (s: string) => void }) => {
             exit={{ opacity: 0 }}
             onClick={() => {
               setSelectedImg(null);
-              playSound(SOUNDS.CLICK);
+              playSound(SOUNDS.TAP);
             }}
             className="fixed inset-0 z-[100] bg-charcoal/95 backdrop-blur-md flex items-center justify-center p-6"
           >
@@ -1142,12 +1218,13 @@ const Gallery = ({ playSound }: { playSound: (s: string) => void }) => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 50 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-w-5xl w-full bg-beige rounded-3xl overflow-hidden shadow-2xl"
+              className="relative max-w-5xl w-full bg-beige rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
             >
               <button 
+                onMouseEnter={() => playSound(SOUNDS.TICK)}
                 onClick={() => {
                   setSelectedImg(null);
-                  playSound(SOUNDS.CLICK);
+                  playSound(SOUNDS.TAP);
                 }}
                 className="absolute top-6 right-6 z-10 p-2 bg-charcoal text-beige rounded-full hover:bg-olive transition-colors shadow-lg"
               >
@@ -1243,8 +1320,8 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
               <motion.a 
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 whileTap={{ scale: 0.9 }}
-                onMouseEnter={() => playSound(SOUNDS.POP)}
-                onClick={() => playSound(SOUNDS.CLICK)}
+                onMouseEnter={() => playSound(SOUNDS.TICK)}
+                onClick={() => playSound(SOUNDS.TAP)}
                 href="mailto:manasa131106@gmail.com" 
                 className="p-4 rounded-full border border-beige/20 hover:bg-beige hover:text-charcoal transition-all shadow-lg hover:shadow-gold/20"
               >
@@ -1253,8 +1330,8 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
               <motion.a 
                 whileHover={{ scale: 1.1, rotate: -5 }}
                 whileTap={{ scale: 0.9 }}
-                onMouseEnter={() => playSound(SOUNDS.POP)}
-                onClick={() => playSound(SOUNDS.CLICK)}
+                onMouseEnter={() => playSound(SOUNDS.TICK)}
+                onClick={() => playSound(SOUNDS.TAP)}
                 href="https://www.linkedin.com/in/manasa-thalari-37015a329" 
                 target="_blank" 
                 rel="noopener noreferrer" 
@@ -1265,8 +1342,8 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
               <motion.a 
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 whileTap={{ scale: 0.9 }}
-                onMouseEnter={() => playSound(SOUNDS.POP)}
-                onClick={() => playSound(SOUNDS.CLICK)}
+                onMouseEnter={() => playSound(SOUNDS.TICK)}
+                onClick={() => playSound(SOUNDS.TAP)}
                 href="https://github.com/Manasa131106" 
                 target="_blank" 
                 rel="noopener noreferrer" 
@@ -1290,7 +1367,7 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
                     {...register('name')}
                     type="text" 
                     placeholder="Your Name"
-                    onFocus={() => playSound(SOUNDS.POP)}
+                    onFocus={() => playSound(SOUNDS.TICK)}
                     className={`w-full bg-transparent border-b py-3 outline-none transition-all text-lg ${errors.name ? 'border-red-500' : 'border-beige/20 focus:border-gold'}`}
                   />
                   {errors.name && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">{errors.name.message}</p>}
@@ -1301,7 +1378,7 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
                     {...register('email')}
                     type="email" 
                     placeholder="your@email.com"
-                    onFocus={() => playSound(SOUNDS.POP)}
+                    onFocus={() => playSound(SOUNDS.TICK)}
                     className={`w-full bg-transparent border-b py-3 outline-none transition-all text-lg ${errors.email ? 'border-red-500' : 'border-beige/20 focus:border-gold'}`}
                   />
                   {errors.email && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">{errors.email.message}</p>}
@@ -1313,7 +1390,7 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
                   {...register('message')}
                   rows={4}
                   placeholder="Ideas start small—type yours here…..."
-                  onFocus={() => playSound(SOUNDS.POP)}
+                  onFocus={() => playSound(SOUNDS.TICK)}
                   className={`w-full bg-transparent border-b py-3 outline-none transition-all text-lg resize-none ${errors.message ? 'border-red-500' : 'border-beige/20 focus:border-gold'}`}
                 />
                 {errors.message && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">{errors.message.message}</p>}
@@ -1324,8 +1401,8 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
                 disabled={isSubmitting}
                 whileHover={{ scale: 1.02, backgroundColor: '#d4a94d', color: '#1a1a1a', boxShadow: "0 0 20px rgba(212, 169, 77, 0.5)" }}
                 whileTap={{ scale: 0.98 }}
-                onMouseEnter={() => playSound(SOUNDS.POP)}
-                onClick={() => playSound(SOUNDS.CLICK)}
+                onMouseEnter={() => playSound(SOUNDS.TICK)}
+                onClick={() => playSound(SOUNDS.TAP)}
                 className="w-full py-5 bg-beige/10 border border-beige/20 text-beige font-black uppercase tracking-[0.2em] rounded-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
@@ -1369,7 +1446,11 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
           <p className="text-xs font-bold uppercase tracking-widest text-beige/40">© Manasa All rights reserved</p>
           <motion.button 
             whileHover={{ y: -5 }}
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onMouseEnter={() => playSound(SOUNDS.TICK)}
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              playSound(SOUNDS.TAP);
+            }}
             className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest"
           >
             <span>Back to top</span>
@@ -1425,8 +1506,8 @@ export default function App() {
             key={id} 
             href={`#${id}`} 
             whileHover={{ scale: 1.5 }}
-            onMouseEnter={() => playSound(SOUNDS.POP)}
-            onClick={() => playSound(SOUNDS.CLICK)}
+            onMouseEnter={() => playSound(SOUNDS.TICK)}
+            onClick={() => playSound(SOUNDS.TAP)}
             className="w-2 h-2 rounded-full bg-charcoal/20 hover:bg-gold transition-all"
             title={id}
           />
