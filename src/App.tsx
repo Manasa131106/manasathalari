@@ -39,12 +39,12 @@ import * as z from 'zod';
 
 // --- Sound Effects ---
 const SOUNDS = {
-  CHIME: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3',
-TICK: 'https://www.soundjay.com/buttons/sounds/button-16.mp3',
-TAP: 'https://www.soundjay.com/buttons/sounds/button-09.mp3',
-AMBIENT: 'https://www.soundjay.com/ambient/sounds/office-ambience-1.mp3',
-SUCCESS: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3',
-ERROR: 'https://www.soundjay.com/button/sounds/beep-07.mp3'
+  CHIME: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3?filename=interface-soft-click-112993.mp3',
+  TICK: 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_270c4a6b52.mp3?filename=click-soft-110479.mp3',
+  TAP: 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_c1f0a6c5a9.mp3?filename=mouse-click-153941.mp3',
+  AMBIENT: 'https://cdn.pixabay.com/download/audio/2022/02/23/audio_5c4e7c5c7c.mp3?filename=soft-ambient-110624.mp3',
+  SUCCESS: 'https://cdn.pixabay.com/download/audio/2022/03/24/audio_4b1c5c6f52.mp3?filename=success-1-6297.mp3',
+  ERROR: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_d1b4c0cbb8.mp3?filename=error-2-126514.mp3'
 };
 
 const useSound = () => {
