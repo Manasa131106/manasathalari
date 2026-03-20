@@ -247,6 +247,52 @@ const Navbar = () => {
   );
 };
 
+const HeroName = () => {
+  const defaultName = 'Manasa';
+  const translations = ['మాನసా', 'मनसा', 'மாணசா', 'ಮಾನದಸಾ'];
+  const [index, setIndex] = useState(-1); // -1 means default
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isHovered) {
+      setIndex(0);
+      interval = setInterval(() => {
+        setIndex((prevIndex) => (prevIndex + 1) % translations.length);
+      }, 800);
+    } else {
+      setIndex(-1);
+    }
+    return () => clearInterval(interval);
+  }, [isHovered]);
+
+  const currentName = index === -1 ? defaultName : translations[index];
+
+  return (
+    <motion.h1
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      initial={{ y: 50, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+      className="text-huge font-black tracking-tighter mb-[-2vw] select-none relative z-20 cursor-default"
+    >
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={currentName}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3 }}
+          className="inline-block"
+        >
+          {currentName}
+        </motion.span>
+      </AnimatePresence>
+    </motion.h1>
+  );
+};
+
 const Hero = () => {
   return (
     <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive text-beige">
@@ -274,14 +320,7 @@ const Hero = () => {
             </span>
           </motion.div>
 
-          <motion.h1 
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="text-huge font-black tracking-tighter mb-[-2vw] select-none relative z-20"
-          >
-            Manasa
-          </motion.h1>
+          <HeroName />
 
           <motion.div 
             initial={{ opacity: 0, scale: 0.9, y: 50 }}
