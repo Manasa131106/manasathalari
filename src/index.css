@@ -33,6 +33,8 @@
 
 @layer base {
   html {
+    background-color: #f8f6f2; /* Fallback for light mode */
+    @apply bg-beige;
     scroll-behavior: smooth;
     transition: background-color 0.3s ease, color 0.3s ease;
   }

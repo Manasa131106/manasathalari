@@ -254,7 +254,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
   };
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-beige/80 backdrop-blur-md py-4 shadow-sm' : 'py-8'}`}>
+    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-beige/80 backdrop-blur-md py-4 shadow-sm text-charcoal' : 'py-8 text-beige'}`}>
       <div className="container mx-auto px-6 flex justify-between items-center">
         <a 
           href="#home" 
@@ -272,18 +272,18 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
               href={link.href} 
               onMouseEnter={() => playSound(SOUNDS.POP)}
               onClick={() => handleNavClick(link.href)}
-              className={`relative text-sm font-medium uppercase tracking-widest transition-colors group ${activeSection === link.href.slice(1) ? 'text-olive' : 'hover:text-olive'}`}
+              className={`relative text-sm font-medium uppercase tracking-widest transition-colors group ${activeSection === link.href.slice(1) ? (isScrolled ? 'text-olive' : 'text-gold') : (isScrolled ? 'hover:text-olive' : 'hover:text-gold')}`}
             >
               {link.name}
               <span className={`absolute -bottom-1 left-0 h-[2px] bg-gold transition-all duration-300 ${activeSection === link.href.slice(1) ? 'w-full' : 'w-0 group-hover:w-full'}`} />
             </a>
           ))}
           
-          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
               onMouseEnter={() => playSound(SOUNDS.POP)}
-              className="p-2 rounded-full border border-charcoal/10 text-charcoal/60 hover:text-charcoal hover:bg-charcoal/5 transition-all"
+              className={`p-2 rounded-full border transition-all ${isScrolled ? 'border-charcoal/10 text-charcoal/60 hover:text-charcoal hover:bg-charcoal/5' : 'border-beige/10 text-beige/60 hover:text-beige hover:bg-beige/5'}`}
               title={isDarkMode ? "Light Mode" : "Dark Mode"}
             >
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -292,7 +292,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
             <button 
               onClick={() => setIsMuted(!isMuted)}
               onMouseEnter={() => playSound(SOUNDS.POP)}
-              className="p-2 rounded-full border border-charcoal/10 text-charcoal/60 hover:text-charcoal hover:bg-charcoal/5 transition-all"
+              className={`p-2 rounded-full border transition-all ${isScrolled ? 'border-charcoal/10 text-charcoal/60 hover:text-charcoal hover:bg-charcoal/5' : 'border-beige/10 text-beige/60 hover:text-beige hover:bg-beige/5'}`}
               title={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
@@ -405,7 +405,7 @@ const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
 
 const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
   return (
-    <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive dark:bg-beige text-beige dark:text-charcoal">
+    <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive text-beige">
       <ScrollingText text="MANASA THALARI" />
       <FloatingShapes />
       
@@ -502,7 +502,7 @@ const About = () => {
   ];
 
   return (
-    <section id="about" className="py-24 md:py-40 bg-beige overflow-hidden">
+    <section id="about" className="py-24 md:py-40 overflow-hidden bg-beige">
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
           <motion.div 
@@ -579,7 +579,7 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
   ];
 
   return (
-    <section id="hackathons" className="py-24 md:py-40 bg-beige border-t border-charcoal/10">
+    <section id="hackathons" className="py-24 md:py-40 border-t border-charcoal/10 bg-beige">
       <div className="container mx-auto px-6">
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
@@ -732,7 +732,7 @@ const Education = () => {
   ];
 
   return (
-    <section id="education" className="py-24 md:py-40 bg-beige border-t border-charcoal/10">
+    <section id="education" className="py-24 md:py-40 border-t border-charcoal/10 bg-beige">
       <div className="container mx-auto px-6">
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
@@ -808,7 +808,7 @@ const Skills = () => {
   ];
 
   return (
-    <section id="skills" className="py-24 md:py-40 bg-olive dark:bg-beige text-beige dark:text-charcoal overflow-hidden">
+    <section id="skills" className="py-24 md:py-40 overflow-hidden bg-beige">
       <div className="container mx-auto px-6">
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
@@ -926,7 +926,7 @@ const Gallery = ({ playSound }: { playSound: (s: string) => void }) => {
   };
 
   return (
-    <section id="gallery" className="py-24 md:py-40 bg-beige border-t border-charcoal/10 overflow-hidden">
+    <section id="gallery" className="py-24 md:py-40 border-t border-charcoal/10 overflow-hidden bg-beige">
       <div className="container mx-auto px-6">
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
@@ -1061,7 +1061,7 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
   };
 
   return (
-    <footer id="contact" className="relative pt-24 md:pt-40 pb-12 bg-charcoal dark:bg-beige text-beige dark:text-charcoal overflow-hidden">
+    <footer id="contact" className="relative pt-24 md:pt-40 pb-12 overflow-hidden bg-charcoal text-beige">
       <ScrollingText text="MANASA THALARI" />
       
       <div className="container mx-auto px-6 relative z-10">
@@ -1231,16 +1231,19 @@ export default function App() {
   });
 
   useEffect(() => {
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      if (themeColorMeta) themeColorMeta.setAttribute('content', '#1a1a1a');
     } else {
       document.documentElement.classList.remove('dark');
+      if (themeColorMeta) themeColorMeta.setAttribute('content', '#f8f6f2');
     }
     localStorage.setItem('isDarkMode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);
 
   return (
-    <div className="relative selection:bg-gold selection:text-charcoal transition-colors duration-300">
+    <div className="relative bg-beige text-charcoal selection:bg-gold selection:text-charcoal transition-colors duration-300">
       <ScrollProgress />
       <CustomCursor />
       <Navbar 
