@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform, useMotionValue } from 'motion/react';
 import { Typewriter } from 'react-simple-typewriter';
 import { 
   ArrowUpRight, 
@@ -142,35 +142,79 @@ const CustomCursor = () => {
         y: mousePos.y - 12,
         scale: isHovering ? 2.5 : 1,
         backgroundColor: isHovering ? 'rgba(201, 163, 78, 0.2)' : 'transparent',
+        boxShadow: isHovering ? '0 0 20px rgba(212, 169, 77, 0.4)' : 'none',
       }}
       transition={{ type: 'spring', stiffness: 500, damping: 28, mass: 0.5 }}
     />
   );
 };
 
-const FloatingShapes = () => {
+const FloatingShapes = ({ count = 6, color = "bg-gold/5" }: { count?: number, color?: string }) => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      {[...Array(6)].map((_, i) => (
+      {[...Array(count)].map((_, i) => (
         <motion.div
           key={i}
-          className="absolute rounded-full bg-gold/5"
+          className={`absolute rounded-full ${color}`}
           style={{
-            width: Math.random() * 300 + 100,
-            height: Math.random() * 300 + 100,
+            width: Math.random() * 200 + 50,
+            height: Math.random() * 200 + 50,
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
+            filter: 'blur(40px)',
           }}
           animate={{
             x: [0, Math.random() * 100 - 50, 0],
             y: [0, Math.random() * 100 - 50, 0],
-            rotate: [0, 360],
-            scale: [1, 1.1, 1],
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.6, 0.3],
           }}
           transition={{
-            duration: Math.random() * 10 + 20,
+            duration: Math.random() * 10 + 15,
             repeat: Infinity,
-            ease: "linear"
+            ease: "easeInOut"
+          }}
+        />
+      ))}
+      {/* Decorative Dots */}
+      {[...Array(15)].map((_, i) => (
+        <motion.div
+          key={`dot-${i}`}
+          className="absolute w-1 h-1 bg-gold/20 rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -20, 0],
+            opacity: [0.2, 0.5, 0.2],
+          }}
+          transition={{
+            duration: Math.random() * 3 + 2,
+            repeat: Infinity,
+            delay: Math.random() * 5,
+          }}
+        />
+      ))}
+      {/* Decorative Lines */}
+      {[...Array(5)].map((_, i) => (
+        <motion.div
+          key={`line-${i}`}
+          className="absolute h-[1px] bg-gold/10"
+          style={{
+            width: Math.random() * 300 + 100,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            rotate: `${Math.random() * 360}deg`,
+          }}
+          animate={{
+            x: [0, 50, 0],
+            opacity: [0.1, 0.3, 0.1],
+          }}
+          transition={{
+            duration: Math.random() * 5 + 5,
+            repeat: Infinity,
+            ease: "easeInOut",
           }}
         />
       ))}
@@ -178,26 +222,125 @@ const FloatingShapes = () => {
   );
 };
 
+const ParallaxWrapper = ({ children, offset = 20 }: { children: React.ReactNode, offset?: number }) => {
+  const x = useSpring(0, { stiffness: 100, damping: 30 });
+  const y = useSpring(0, { stiffness: 100, damping: 30 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const { innerWidth, innerHeight } = window;
+      const xPct = (e.clientX / innerWidth - 0.5) * offset;
+      const yPct = (e.clientY / innerHeight - 0.5) * offset;
+      x.set(xPct);
+      y.set(yPct);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [offset, x, y]);
+
+  return (
+    <motion.div style={{ x, y }}>
+      {children}
+    </motion.div>
+  );
+};
+
+const SectionHeading = ({ title, subtitle, align = "left" }: { title: string, subtitle?: string, align?: "left" | "center" }) => {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.8 }}
+      className={`mb-16 max-w-3xl ${align === "center" ? "mx-auto text-center" : ""}`}
+    >
+      <div className="relative inline-block">
+        <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase relative z-10">
+          {title}
+        </h2>
+        <motion.span 
+          initial={{ width: 0, opacity: 0 }}
+          whileInView={{ width: "100%", opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, delay: 0.5, ease: "circOut" }}
+          className="absolute bottom-2 left-0 h-4 bg-gold/30 -z-0"
+        />
+        <motion.span 
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.8, ease: "easeInOut" }}
+          className="absolute -bottom-1 left-0 w-full h-[2px] bg-gold origin-left"
+        />
+      </div>
+      {subtitle && <p className="opacity-60 text-lg mt-6 leading-relaxed">{subtitle}</p>}
+    </motion.div>
+  );
+};
+
+const TiltWrapper = ({ children, intensity = 15 }: { children: React.ReactNode, intensity?: number }) => {
+  const x = useSpring(0, { stiffness: 100, damping: 30 });
+  const y = useSpring(0, { stiffness: 100, damping: 30 });
+
+  const rotateX = useTransform(y, [-0.5, 0.5], [intensity, -intensity]);
+  const rotateY = useTransform(x, [-0.5, 0.5], [-intensity, intensity]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const xPct = mouseX / width - 0.5;
+    const yPct = mouseY / height - 0.5;
+    x.set(xPct);
+    y.set(yPct);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateX,
+        rotateY,
+        transformStyle: "preserve-3d",
+      }}
+      className="relative transition-shadow duration-300 hover:shadow-2xl hover:shadow-gold/10 rounded-2xl"
+    >
+      {children}
+    </motion.div>
+  );
+};
+
 const ScrollingText = ({ text }: { text: string }) => {
   return (
     <div className="absolute inset-0 flex items-center overflow-hidden pointer-events-none opacity-5 select-none z-0">
-      <motion.div 
-        initial={{ x: 0 }}
-        animate={{ x: "-50%" }}
-        transition={{ 
-          duration: 20, 
-          repeat: Infinity, 
-          ease: "linear" 
-        }}
-        className="flex whitespace-nowrap"
-      >
-        <span className="text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
-          {text} {text} {text} {text}
-        </span>
-        <span className="text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
-          {text} {text} {text} {text}
-        </span>
-      </motion.div>
+      <ParallaxWrapper offset={-50}>
+        <motion.div 
+          initial={{ x: 0 }}
+          animate={{ x: "-50%" }}
+          transition={{ 
+            duration: 20, 
+            repeat: Infinity, 
+            ease: "linear" 
+          }}
+          className="flex whitespace-nowrap"
+        >
+          <span className="text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
+            {text} {text} {text} {text}
+          </span>
+          <span className="text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
+            {text} {text} {text} {text}
+          </span>
+        </motion.div>
+      </ParallaxWrapper>
     </div>
   );
 };
@@ -220,7 +363,24 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          setActiveSection(entry.target.id);
+          const sectionId = entry.target.id;
+          setActiveSection(sectionId);
+          
+          // Update theme-color meta tag for mobile browser UI
+          const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+          if (themeColorMeta) {
+            let color = '#f8f6f2'; // Default beige
+            
+            if (sectionId === 'home') {
+              color = isDarkMode ? '#A3B18A' : '#6B7A5E'; // Olive
+            } else if (sectionId === 'contact') {
+              color = isDarkMode ? '#f8f6f2' : '#1f1f1f'; // Charcoal (swaps in dark mode)
+            } else {
+              color = isDarkMode ? '#1a1a1a' : '#f8f6f2'; // Beige
+            }
+            
+            themeColorMeta.setAttribute('content', color);
+          }
         }
       });
     };
@@ -236,7 +396,25 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
       window.removeEventListener('scroll', handleScroll);
       observer.disconnect();
     };
-  }, []);
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    // Update theme-color meta tag whenever activeSection or isDarkMode changes
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) {
+      let color = '#f8f6f2'; // Default beige
+      
+      if (activeSection === 'home') {
+        color = isDarkMode ? '#A3B18A' : '#6B7A5E'; // Olive
+      } else if (activeSection === 'contact') {
+        color = isDarkMode ? '#f8f6f2' : '#1f1f1f'; // Charcoal (swaps in dark mode)
+      } else {
+        color = isDarkMode ? '#1a1a1a' : '#f8f6f2'; // Beige
+      }
+      
+      themeColorMeta.setAttribute('content', color);
+    }
+  }, [activeSection, isDarkMode]);
 
   const navLinks = [
     { name: 'Home', href: '#home' },
@@ -304,18 +482,18 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
         <div className="flex items-center space-x-2 md:hidden">
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-2 rounded-full border border-charcoal/10 text-charcoal/60"
+            className={`p-2 rounded-full border transition-all ${isScrolled ? 'border-charcoal/10 text-charcoal/60' : 'border-beige/10 text-beige/60'}`}
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
           <button 
             onClick={() => setIsMuted(!isMuted)}
-            className="p-2 rounded-full border border-charcoal/10 text-charcoal/60"
+            className={`p-2 rounded-full border transition-all ${isScrolled ? 'border-charcoal/10 text-charcoal/60' : 'border-beige/10 text-beige/60'}`}
           >
             {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
           </button>
           <button 
-            className="p-2 hover:bg-charcoal/5 rounded-full transition-colors" 
+            className={`p-2 rounded-full transition-colors ${isScrolled ? 'hover:bg-charcoal/5' : 'hover:bg-beige/5'}`} 
             onClick={() => {
               setIsMenuOpen(!isMenuOpen);
               playSound(SOUNDS.CLICK);
@@ -411,40 +589,46 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
       
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col items-center text-center">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="flex flex-wrap justify-center gap-4 md:gap-8 mb-8 text-xs font-bold uppercase tracking-[0.3em]"
-          >
-            <span className="text-gold">
-              <Typewriter
-                words={['Data Analysis Learner', 'Working on Projects', 'Skills in Progress']}
-                loop={0}
-                cursor
-                cursorStyle='_'
-                typeSpeed={80}
-                deleteSpeed={50}
-                delaySpeed={2000}
+          <ParallaxWrapper offset={30}>
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="flex flex-wrap justify-center gap-4 md:gap-8 mb-8 text-xs font-bold uppercase tracking-[0.3em]"
+            >
+              <span className="text-gold">
+                <Typewriter
+                  words={['Data Analysis Learner', 'Working on Projects', 'Skills in Progress']}
+                  loop={0}
+                  cursor
+                  cursorStyle='_'
+                  typeSpeed={80}
+                  deleteSpeed={50}
+                  delaySpeed={2000}
+                />
+              </span>
+            </motion.div>
+          </ParallaxWrapper>
+
+          <ParallaxWrapper offset={15}>
+            <HeroName playSound={playSound} />
+          </ParallaxWrapper>
+
+          <TiltWrapper intensity={10}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+              className="relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl z-0 group bg-charcoal/5 dark:bg-beige/5"
+            >
+              <motion.img 
+                src="https://i.ibb.co/8g39vtqf/my-pic.jpg" 
+                alt="Manasa Portrait" 
+                className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-105"
+                referrerPolicy="no-referrer"
               />
-            </span>
-          </motion.div>
-
-          <HeroName playSound={playSound} />
-
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl z-0 group bg-charcoal/5 dark:bg-beige/5"
-          >
-            <motion.img 
-              src="https://i.ibb.co/8g39vtqf/my-pic.jpg" 
-              alt="Manasa Portrait" 
-              className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-105"
-              referrerPolicy="no-referrer"
-            />
-          </motion.div>
+            </motion.div>
+          </TiltWrapper>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -454,21 +638,29 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
           >
             <motion.a 
               href="#hackathons"
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ 
+                scale: 1.05, 
+                boxShadow: "0 0 30px rgba(212, 169, 77, 0.6)",
+                backgroundColor: "#e5b858"
+              }}
               whileTap={{ scale: 0.95 }}
               onMouseEnter={() => playSound(SOUNDS.POP)}
               onClick={() => playSound(SOUNDS.CLICK)}
-              className="px-8 py-4 bg-gold text-charcoal font-bold uppercase tracking-widest rounded-full shadow-lg hover:shadow-gold/30 transition-shadow"
+              className="px-8 py-4 bg-gold text-charcoal font-bold uppercase tracking-widest rounded-full shadow-lg transition-all"
             >
               View Projects
             </motion.a>
             <motion.a 
               href="#contact"
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ 
+                scale: 1.05, 
+                backgroundColor: "rgba(248, 246, 242, 0.2)",
+                boxShadow: "0 0 20px rgba(248, 246, 242, 0.1)"
+              }}
               whileTap={{ scale: 0.95 }}
               onMouseEnter={() => playSound(SOUNDS.POP)}
               onClick={() => playSound(SOUNDS.CLICK)}
-              className="px-8 py-4 border border-beige/30 text-beige font-bold uppercase tracking-widest rounded-full hover:bg-beige/10 transition-colors"
+              className="px-8 py-4 border border-beige/30 text-beige font-bold uppercase tracking-widest rounded-full transition-all"
             >
               Let's Talk
             </motion.a>
@@ -502,31 +694,26 @@ const About = () => {
   ];
 
   return (
-    <section id="about" className="py-24 md:py-40 overflow-hidden bg-beige">
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
-          <motion.div 
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.8 }}
-            className="space-y-8"
-          >
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter">About </h2>
-            <div className="space-y-6 text-lg md:text-xl text-charcoal/80 leading-relaxed max-w-xl">
-              <p>
-                I’m a B.Tech student beginning my journey in Data Analysis, learning to see beyond numbers and uncover the stories within data.
-              </p>
-              <p>
-                I’m building my skills in Excel, SQL, and data visualization—focused on turning raw data into meaningful insights, while growing through curiosity and consistency every day.
-              </p>
-              <p>
-                Currently, I’m an intern at EvolveXspaces, where I’m gaining hands-on experience and working with real-world data.
-              </p>
-            </div>
-          </motion.div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 pt-10 lg:pt-0">
+    <section id="about" className="relative py-24 md:py-40 overflow-hidden bg-beige">
+      <FloatingShapes count={4} color="bg-charcoal/5" />
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="max-w-4xl mx-auto text-center">
+          <SectionHeading 
+            title="About" 
+            subtitle="I’m a B.Tech student beginning my journey in Data Analysis, learning to see beyond numbers and uncover the stories within data."
+            align="center"
+          />
+          <div className="space-y-6 text-lg md:text-xl text-charcoal/80 leading-relaxed mt-12">
+            <p>
+              I’m building my skills in Excel, SQL, and data visualization—focused on turning raw data into meaningful insights, while growing through curiosity and consistency every day.
+            </p>
+            <p>
+              Currently, I’m an intern at EvolveXspaces, where I’m gaining hands-on experience and working with real-world data.
+            </p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 mt-20">
             {stats.map((stat, idx) => (
               <motion.div 
                 key={idx}
@@ -547,7 +734,6 @@ const About = () => {
                 <div className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60 group-hover:text-gold transition-colors">{stat.label}</div>
               </motion.div>
             ))}
-          </div>
         </div>
       </div>
     </section>
@@ -579,20 +765,13 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
   ];
 
   return (
-    <section id="hackathons" className="py-24 md:py-40 border-t border-charcoal/10 bg-beige">
-      <div className="container mx-auto px-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8 }}
-          className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8"
-        >
-          <div className="max-w-xl">
-            <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">Hackathons</h2>
-            <p className="text-charcoal/60">I actively participate in hackathons to challenge my thinking, collaborate with others, and build solutions under pressure. These experiences help me learn faster, adapt quickly, and turn ideas into real outcomes.</p>
-          </div>
-        </motion.div>
+    <section id="hackathons" className="relative py-24 md:py-40 border-t border-charcoal/10 bg-beige overflow-hidden">
+      <FloatingShapes count={3} color="bg-gold/5" />
+      <div className="container mx-auto px-6 relative z-10">
+        <SectionHeading 
+          title="Hackathons" 
+          subtitle="I actively participate in hackathons to challenge my thinking, collaborate with others, and build solutions under pressure. These experiences help me learn faster, adapt quickly, and turn ideas into real outcomes."
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto items-start">
           {hackathons.map((hackathon, idx) => (
@@ -732,18 +911,13 @@ const Education = () => {
   ];
 
   return (
-    <section id="education" className="py-24 md:py-40 border-t border-charcoal/10 bg-beige">
-      <div className="container mx-auto px-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="mb-24 max-w-3xl"
-        >
-          <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 uppercase">Education</h2>
-          <p className="text-charcoal/60 text-lg">My academic journey has shaped my foundation in learning, discipline, and problem-solving, guiding me step by step toward my career in technology.</p>
-        </motion.div>
+    <section id="education" className="relative py-24 md:py-40 border-t border-charcoal/10 bg-beige overflow-hidden">
+      <FloatingShapes count={4} color="bg-olive/5" />
+      <div className="container mx-auto px-6 relative z-10">
+        <SectionHeading 
+          title="Education" 
+          subtitle="My academic journey has shaped my foundation in learning, discipline, and problem-solving, guiding me step by step toward my career in technology."
+        />
 
         <div className="space-y-32">
           {education.map((edu, idx) => (
@@ -808,21 +982,13 @@ const Skills = () => {
   ];
 
   return (
-    <section id="skills" className="py-24 md:py-40 overflow-hidden bg-beige">
-      <div className="container mx-auto px-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="mb-20 max-w-3xl"
-        >
-          <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-8">Skills</h2>
-          <div className="space-y-4 text-lg opacity-80 leading-relaxed">
-            <p>I’m building a strong foundation in technical tools while continuously improving my ability to think, analyze, and solve problems effectively.</p>
-            <p>Along with technical knowledge, I focus on developing personal skills that enhance creativity and decision-making.</p>
-          </div>
-        </motion.div>
+    <section id="skills" className="relative py-24 md:py-40 overflow-hidden bg-olive text-beige">
+      <FloatingShapes count={5} color="bg-beige/5" />
+      <div className="container mx-auto px-6 relative z-10">
+        <SectionHeading 
+          title="Skills" 
+          subtitle="I’m building a strong foundation in technical tools while continuously improving my ability to think, analyze, and solve problems effectively."
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Technical Skills Card */}
@@ -832,7 +998,7 @@ const Skills = () => {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
             whileHover={{ y: -10 }}
-            className="p-10 rounded-3xl border border-beige/10 bg-beige/5 space-y-8 shadow-xl hover:shadow-2xl transition-all duration-500"
+            className="p-10 rounded-3xl border border-beige/20 bg-beige/10 space-y-8 shadow-xl hover:shadow-2xl transition-all duration-500"
           >
             <div className="flex items-center space-x-4">
               <motion.span 
@@ -866,7 +1032,7 @@ const Skills = () => {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8 }}
             whileHover={{ y: -10 }}
-            className="p-10 rounded-3xl border border-beige/10 bg-beige/5 space-y-8 shadow-xl hover:shadow-2xl transition-all duration-500"
+            className="p-10 rounded-3xl border border-beige/20 bg-beige/10 space-y-8 shadow-xl hover:shadow-2xl transition-all duration-500"
           >
             <div className="flex items-center space-x-4">
               <motion.span 
@@ -926,40 +1092,34 @@ const Gallery = ({ playSound }: { playSound: (s: string) => void }) => {
   };
 
   return (
-    <section id="gallery" className="py-24 md:py-40 border-t border-charcoal/10 overflow-hidden bg-beige">
-      <div className="container mx-auto px-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="mb-20 max-w-3xl"
-        >
-          <h2 className="text-5xl md:text-7xl font-black tracking-tighter mb-8">Gallery</h2>
-          <div className="space-y-4 text-charcoal/60 text-lg leading-relaxed">
-            <p>A glimpse into my journey—capturing moments of learning, experiences, and growth beyond just academics.</p>
-            <p>Each image reflects a story, a memory, or a step forward in my personal and professional development.</p>
-          </div>
-        </motion.div>
+    <section id="gallery" className="relative py-24 md:py-40 border-t border-charcoal/10 overflow-hidden bg-beige">
+      <FloatingShapes count={4} color="bg-charcoal/5" />
+      <div className="container mx-auto px-6 relative z-10">
+        <SectionHeading 
+          title="Gallery" 
+          subtitle="A glimpse into my journey—capturing moments of learning, experiences, and growth beyond just academics."
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
           {images.map((img, idx) => (
-            <motion.div 
-              key={idx}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ delay: idx * 0.1, duration: 0.8 }}
-              whileHover={{ scale: 1.02 }}
-              onMouseEnter={() => playSound(SOUNDS.POP)}
-              onClick={() => handleImageClick(img)}
-              className="rounded-3xl overflow-hidden shadow-xl cursor-pointer group relative"
-            >
-              <img src={img.url} alt={`Gallery ${idx}`} className="w-full h-auto object-contain bg-charcoal/5 dark:bg-beige/5 transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
-              <div className="absolute inset-0 bg-olive/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <span className="bg-beige text-charcoal px-6 py-2 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg">View Details</span>
-              </div>
-            </motion.div>
+            <div key={idx}>
+              <TiltWrapper intensity={idx === 0 ? 5 : 15}>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ delay: idx * 0.1, duration: 0.8 }}
+                  onMouseEnter={() => playSound(SOUNDS.POP)}
+                  onClick={() => handleImageClick(img)}
+                  className="rounded-3xl overflow-hidden shadow-xl cursor-pointer group relative"
+                >
+                  <img src={img.url} alt={`Gallery ${idx}`} className="w-full h-auto object-contain bg-charcoal/5 dark:bg-beige/5 transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
+                  <div className="absolute inset-0 bg-olive/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <span className="bg-beige text-charcoal px-6 py-2 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg">View Details</span>
+                  </div>
+                </motion.div>
+              </TiltWrapper>
+            </div>
           ))}
         </div>
       </div>
@@ -1162,7 +1322,7 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
               <motion.button 
                 type="submit"
                 disabled={isSubmitting}
-                whileHover={{ scale: 1.02, backgroundColor: '#d4a94d', color: '#1a1a1a' }}
+                whileHover={{ scale: 1.02, backgroundColor: '#d4a94d', color: '#1a1a1a', boxShadow: "0 0 20px rgba(212, 169, 77, 0.5)" }}
                 whileTap={{ scale: 0.98 }}
                 onMouseEnter={() => playSound(SOUNDS.POP)}
                 onClick={() => playSound(SOUNDS.CLICK)}
@@ -1231,13 +1391,10 @@ export default function App() {
   });
 
   useEffect(() => {
-    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
-      if (themeColorMeta) themeColorMeta.setAttribute('content', '#1a1a1a');
     } else {
       document.documentElement.classList.remove('dark');
-      if (themeColorMeta) themeColorMeta.setAttribute('content', '#f8f6f2');
     }
     localStorage.setItem('isDarkMode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);
