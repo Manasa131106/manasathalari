@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring, useTransform, useMotionValue } from 'motion/react';
 import { 
   ArrowUpRight, 
@@ -67,7 +67,7 @@ const useSound = () => {
     localStorage.setItem('isMuted', JSON.stringify(isMuted));
   }, [isMuted]);
 
-  const playSound = (soundUrl: string) => {
+  const playSound = useCallback((soundUrl: string) => {
     if (isMuted) return;
     
     const MAX_VOLUME = 0.3;
@@ -108,7 +108,7 @@ const useSound = () => {
         }, 20);
       }).catch(err => console.warn("Playback failed", err));
     }
-  };
+  }, [isMuted]);
 
   return { isMuted, setIsMuted, playSound };
 };
@@ -190,78 +190,36 @@ const CustomCursor = () => {
   );
 };
 
-const FloatingShapes = ({ count = 6, color = "bg-gold/5" }: { count?: number, color?: string }) => {
+const FloatingShapes = memo(({ count = 6, color = "bg-gold/5" }: { count?: number, color?: string }) => {
+  // Stable positions to avoid flickering on re-render
+  const shapes = [
+    { left: '10%', top: '20%', size: 150 },
+    { left: '80%', top: '10%', size: 200 },
+    { left: '40%', top: '70%', size: 100 },
+    { left: '20%', top: '80%', size: 180 },
+    { left: '70%', top: '60%', size: 120 },
+    { left: '50%', top: '30%', size: 160 },
+  ];
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      {[...Array(count)].map((_, i) => (
-        <motion.div
+      {shapes.slice(0, count).map((shape, i) => (
+        <div
           key={i}
           className={`absolute rounded-full ${color}`}
           style={{
-            width: Math.random() * 200 + 50,
-            height: Math.random() * 200 + 50,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
+            width: shape.size,
+            height: shape.size,
+            left: shape.left,
+            top: shape.top,
             filter: 'blur(40px)',
-          }}
-          animate={{
-            x: [0, Math.random() * 100 - 50, 0],
-            y: [0, Math.random() * 100 - 50, 0],
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: Math.random() * 10 + 15,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      ))}
-      {/* Decorative Dots */}
-      {[...Array(15)].map((_, i) => (
-        <motion.div
-          key={`dot-${i}`}
-          className="absolute w-1 h-1 bg-gold/20 rounded-full"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            y: [0, -20, 0],
-            opacity: [0.2, 0.5, 0.2],
-          }}
-          transition={{
-            duration: Math.random() * 3 + 2,
-            repeat: Infinity,
-            delay: Math.random() * 5,
-          }}
-        />
-      ))}
-      {/* Decorative Lines */}
-      {[...Array(5)].map((_, i) => (
-        <motion.div
-          key={`line-${i}`}
-          className="absolute h-[1px] bg-gold/10"
-          style={{
-            width: Math.random() * 300 + 100,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            rotate: `${Math.random() * 360}deg`,
-          }}
-          animate={{
-            x: [0, 50, 0],
-            opacity: [0.1, 0.3, 0.1],
-          }}
-          transition={{
-            duration: Math.random() * 5 + 5,
-            repeat: Infinity,
-            ease: "easeInOut",
+            opacity: 0.4
           }}
         />
       ))}
     </div>
   );
-};
+});
 
 const ParallaxWrapper = ({ children, offset = 20 }: { children: React.ReactNode, offset?: number }) => {
   const x = useSpring(0, { stiffness: 100, damping: 30 });
@@ -377,31 +335,29 @@ const TiltWrapper = ({ children, intensity = 15 }: { children: React.ReactNode, 
   );
 };
 
-const ScrollingText = ({ text }: { text: string }) => {
+const ScrollingText = memo(({ text }: { text: string }) => {
   return (
     <div className="absolute inset-0 flex items-center overflow-hidden pointer-events-none opacity-20 md:opacity-5 select-none z-10">
-      <ParallaxWrapper offset={-50}>
-        <motion.div 
-          initial={{ x: 0 }}
-          animate={{ x: "-50%" }}
-          transition={{ 
-            duration: 20, 
-            repeat: Infinity, 
-            ease: "linear" 
-          }}
-          className="flex whitespace-nowrap"
-        >
-          <span className="text-[20vw] md:text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
-            {text} {text} {text} {text}
-          </span>
-          <span className="text-[20vw] md:text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
-            {text} {text} {text} {text}
-          </span>
-        </motion.div>
-      </ParallaxWrapper>
+      <motion.div 
+        initial={{ x: 0 }}
+        animate={{ x: "-50%" }}
+        transition={{ 
+          duration: 20, 
+          repeat: Infinity, 
+          ease: "linear" 
+        }}
+        className="flex whitespace-nowrap"
+      >
+        <span className="text-[20vw] md:text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
+          {text} {text} {text} {text}
+        </span>
+        <span className="text-[20vw] md:text-[25vw] font-black uppercase tracking-tighter leading-none pr-20">
+          {text} {text} {text} {text}
+        </span>
+      </motion.div>
     </div>
   );
-};
+});
 
 const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: { isMuted: boolean, setIsMuted: (v: boolean) => void, playSound: (s: string) => void, isDarkMode: boolean, setIsDarkMode: (v: boolean) => void }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -595,7 +551,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
   );
 };
 
-const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
+const HeroName = memo(({ playSound }: { playSound: (s: string) => void }) => {
   const defaultName = 'Manasa';
   const translations = ['మనసా', 'मनसा', 'மனசா', 'ಮನಸಾ', 'মনসা', 'मनसा', 'マナサ'];
   const [index, setIndex] = useState(-1); // -1 means default
@@ -641,48 +597,23 @@ const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
       </AnimatePresence>
     </motion.h1>
   );
-};
+});
 
-const HeroBackground = () => {
+const HeroBackground = memo(() => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      <motion.div
-        animate={{
-          scale: [1, 1.1, 1],
-          opacity: [0.05, 0.1, 0.05],
-          rotate: [0, 45, 0],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-        className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] bg-gold/20 rounded-full blur-[120px]"
-      />
-      <motion.div
-        animate={{
-          scale: [1.1, 1, 1.1],
-          opacity: [0.05, 0.1, 0.05],
-          rotate: [0, -45, 0],
-        }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-        className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] bg-gold/10 rounded-full blur-[120px]"
-      />
+      <div className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] bg-gold/20 rounded-full blur-[120px] opacity-10" />
+      <div className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] bg-gold/10 rounded-full blur-[120px] opacity-10" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(26,26,26,0.2)_100%)]" />
     </div>
   );
-};
+});
 
-const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
+const Hero = memo(({ playSound }: { playSound: (s: string) => void }) => {
   return (
     <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive text-beige">
       <HeroBackground />
       <ScrollingText text="MANASA THALARI" />
-      <FloatingShapes />
       
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col items-center text-center relative">
@@ -778,7 +709,7 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
       </motion.div>
     </section>
   );
-};
+});
 
 const About = () => {
   const stats = [
