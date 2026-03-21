@@ -551,7 +551,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
   );
 };
 
-const HeroName = memo(({ playSound }: { playSound: (s: string) => void }) => {
+const HeroName = memo(({ playSound, className }: { playSound: (s: string) => void, className?: string }) => {
   const defaultName = 'Manasa';
   const translations = ['మనసా', 'मनसा', 'மனசா', 'ಮನಸಾ', 'মনসা', 'मनसा', 'マナサ'];
   const [index, setIndex] = useState(-1); // -1 means default
@@ -581,7 +581,7 @@ const HeroName = memo(({ playSound }: { playSound: (s: string) => void }) => {
       initial={{ y: 50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-      className="text-huge font-black tracking-tighter select-none absolute top-0 left-1/2 -translate-x-1/2 z-20 cursor-default whitespace-nowrap text-white dark:text-gold transition-colors duration-300 pointer-events-auto"
+      className={`text-huge font-black tracking-tighter select-none z-20 cursor-default whitespace-nowrap text-white dark:text-gold transition-colors duration-300 pointer-events-auto ${className}`}
     >
       <AnimatePresence mode="wait">
         <motion.span
@@ -613,7 +613,6 @@ const Hero = memo(({ playSound }: { playSound: (s: string) => void }) => {
   return (
     <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive text-beige">
       <HeroBackground />
-      <ScrollingText text="MANASA THALARI" />
       
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col items-center text-center relative">
@@ -628,12 +627,12 @@ const Hero = memo(({ playSound }: { playSound: (s: string) => void }) => {
             </span>
           </motion.div>
 
-          <div className="relative w-full flex flex-col items-center">
-            {/* Image Layer - Lower Z-Index */}
+          <div className="relative w-full flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
+            {/* Image Layer */}
             <div className="relative z-0">
               <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.5, duration: 0.8 }}
                 className="relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl group bg-charcoal/5 dark:bg-beige/5"
               >
@@ -646,10 +645,9 @@ const Hero = memo(({ playSound }: { playSound: (s: string) => void }) => {
               </motion.div>
             </div>
 
-            {/* "Manasa" Text Layer - Absolute with Higher Z-Index */}
-            <div className="absolute top-[-5vw] md:top-[-4vw] left-0 w-full z-20">
-              <div className="relative flex items-center justify-center">
-                <h1 className="text-huge font-black tracking-tighter invisible select-none whitespace-nowrap">Manasa</h1>
+            {/* "Manasa" Text Layer - Vertical beside image */}
+            <div className="relative flex items-center justify-center">
+              <div className="[writing-mode:vertical-rl] rotate-180">
                 <HeroName playSound={playSound} />
               </div>
             </div>
@@ -952,7 +950,7 @@ const Education = () => {
           subtitle="My academic journey has shaped my foundation in learning, discipline, and problem-solving, guiding me step by step toward my career in technology."
         />
 
-        <div className="space-y-24 md:space-y-32">
+        <div className="space-y-16">
           {education.map((edu, idx) => (
             <motion.div 
               key={idx}
@@ -960,29 +958,13 @@ const Education = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className={`flex flex-col ${idx % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} gap-12 lg:gap-24 items-center`}
+              className="max-w-3xl mx-auto text-center space-y-6"
             >
-              {/* Image Side */}
-              <motion.div 
-                whileHover={{ scale: 1.02 }}
-                className="w-full lg:w-1/2"
-              >
-                <div className="relative overflow-hidden rounded-3xl shadow-2xl group bg-charcoal/5 dark:bg-beige/5">
-                  <img 
-                    src={edu.image} 
-                    alt={edu.title} 
-                    className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-110"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-0 bg-olive/5 group-hover:bg-transparent transition-colors duration-300" />
-                </div>
-              </motion.div>
-
               {/* Content Side */}
-              <div className="w-full lg:w-1/2 space-y-6">
+              <div className="space-y-6">
                 <motion.div 
-                  initial={{ x: idx % 2 === 0 ? 20 : -20, opacity: 0 }}
-                  whileInView={{ x: 0, opacity: 1 }}
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  whileInView={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.4 }}
                   className="inline-block px-4 py-2 bg-olive text-beige rounded-full text-sm font-bold uppercase tracking-widest shadow-lg"
                 >
@@ -993,7 +975,7 @@ const Education = () => {
                   <p className="text-lg font-bold text-olive/70">{edu.location}</p>
                 </div>
                 <div className="text-gold font-bold uppercase tracking-widest text-sm">{edu.period}</div>
-                <p className="text-charcoal/70 text-lg leading-relaxed max-w-xl">{edu.description}</p>
+                <p className="text-charcoal/70 text-lg leading-relaxed mx-auto">{edu.description}</p>
               </div>
             </motion.div>
           ))}
