@@ -644,6 +644,40 @@ const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
   );
 };
 
+const HeroBackground = () => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      <motion.div
+        animate={{
+          scale: [1, 1.1, 1],
+          opacity: [0.05, 0.1, 0.05],
+          rotate: [0, 45, 0],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+        className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] bg-gold/20 rounded-full blur-[120px]"
+      />
+      <motion.div
+        animate={{
+          scale: [1.1, 1, 1.1],
+          opacity: [0.05, 0.1, 0.05],
+          rotate: [0, -45, 0],
+        }}
+        transition={{
+          duration: 25,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+        className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] bg-gold/10 rounded-full blur-[120px]"
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(26,26,26,0.2)_100%)]" />
+    </div>
+  );
+};
+
 const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 500], [0, 100]);
@@ -651,6 +685,7 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
 
   return (
     <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive text-beige">
+      <HeroBackground />
       <ScrollingText text="MANASA THALARI" />
       <FloatingShapes />
       
@@ -724,7 +759,7 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
               whileTap={{ scale: 0.95 }}
               onMouseEnter={() => playSound(SOUNDS.TICK)}
               onClick={() => playSound(SOUNDS.TAP)}
-              className="px-8 py-4 bg-gold text-charcoal font-bold uppercase tracking-widest rounded-full shadow-lg transition-all"
+              className="px-6 py-3 bg-gold text-charcoal font-bold uppercase tracking-widest rounded-full shadow-lg transition-all text-sm"
             >
               View Projects
             </motion.a>
@@ -738,7 +773,7 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
               whileTap={{ scale: 0.95 }}
               onMouseEnter={() => playSound(SOUNDS.TICK)}
               onClick={() => playSound(SOUNDS.TAP)}
-              className="px-8 py-4 border border-beige/30 text-beige font-bold uppercase tracking-widest rounded-full transition-all"
+              className="px-6 py-3 border border-beige/30 text-beige font-bold uppercase tracking-widest rounded-full transition-all text-sm"
             >
               Let's Talk
             </motion.a>
@@ -879,17 +914,17 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
               >
                 {/* Front Side */}
                 <div 
-                  className="relative w-full h-full rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 shadow-xl flex flex-col border border-charcoal/5"
+                  className="relative w-full h-full rounded-3xl overflow-hidden bg-charcoal shadow-xl flex flex-col border border-white/10"
                   style={{ backfaceVisibility: 'hidden' }}
                 >
-                  <div className="relative overflow-hidden bg-charcoal/5 dark:bg-beige/5 h-64">
+                  <div className="relative overflow-hidden bg-charcoal/50 h-64">
                     <img 
                       src={hackathon.image} 
                       alt={hackathon.title} 
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-transparent to-transparent" />
                     <div className="absolute bottom-6 left-6 right-6 text-left">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="px-2 py-1 bg-gold text-charcoal text-[10px] font-bold uppercase tracking-widest rounded">
@@ -899,14 +934,14 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
                           {hackathon.date}
                         </span>
                       </div>
-                      <h3 className="text-beige text-3xl font-black leading-tight tracking-tighter">{hackathon.title}</h3>
+                      <h3 className="text-white text-3xl font-black leading-tight tracking-tighter">{hackathon.title}</h3>
                     </div>
                   </div>
                   <div className="p-8 flex flex-col justify-center flex-grow text-left">
                     <p className="text-gold font-bold uppercase tracking-[0.2em] text-[10px] mb-2">Role</p>
-                    <p className="text-charcoal font-black text-xl leading-tight mb-2">{hackathon.role}</p>
-                    <div className="flex items-center gap-2 text-charcoal/40">
-                      <span className="w-4 h-[1px] bg-charcoal/20" />
+                    <p className="text-white font-black text-xl leading-tight mb-2">{hackathon.role}</p>
+                    <div className="flex items-center gap-2 text-white/40">
+                      <span className="w-4 h-[1px] bg-white/20" />
                       <p className="text-xs font-bold uppercase tracking-widest">{hackathon.location}</p>
                     </div>
                   </div>
@@ -914,7 +949,7 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
 
                 {/* Back Side */}
                 <div 
-                  className="absolute inset-0 w-full h-full rounded-3xl overflow-hidden bg-olive p-10 flex flex-col justify-center text-beige shadow-2xl border border-white/10 text-left"
+                  className="absolute inset-0 w-full h-full rounded-3xl overflow-hidden bg-olive p-10 flex flex-col justify-center text-white shadow-2xl border border-white/10 text-left"
                   style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
                 >
                   <div className="mb-8">
