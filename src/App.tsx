@@ -692,10 +692,6 @@ const HeroBackground = () => {
   const mouseY = useMotionValue(0);
   const spotlightX = useSpring(mouseX, { stiffness: 50, damping: 20 });
   const spotlightY = useSpring(mouseY, { stiffness: 50, damping: 20 });
-  
-  // Parallax values for background elements
-  const parallaxX = useTransform(mouseX, [0, window.innerWidth], [20, -20]);
-  const parallaxY = useTransform(mouseY, [0, window.innerHeight], [20, -20]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -708,7 +704,6 @@ const HeroBackground = () => {
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      {/* Dynamic Spotlight */}
       <motion.div
         style={{
           left: spotlightX,
@@ -716,46 +711,8 @@ const HeroBackground = () => {
           translateX: '-50%',
           translateY: '-50%',
         }}
-        className="absolute w-[800px] h-[800px] bg-gold/5 rounded-full blur-[150px] hidden md:block mix-blend-soft-light"
+        className="absolute w-[600px] h-[600px] bg-gold/10 rounded-full blur-[120px] hidden md:block mix-blend-soft-light"
       />
-
-      {/* Subtle Grid Pattern */}
-      <motion.div 
-        style={{ x: parallaxX, y: parallaxY }}
-        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
-        transition={{ type: "spring", stiffness: 50, damping: 30 }}
-      >
-        <div className="absolute inset-0" style={{ 
-          backgroundImage: `radial-gradient(circle at 2px 2px, #d4a94d 1px, transparent 0)`,
-          backgroundSize: '40px 40px' 
-        }} />
-      </motion.div>
-
-      {/* Floating Particles */}
-      {[...Array(15)].map((_, i) => (
-        <motion.div
-          key={i}
-          initial={{ 
-            x: Math.random() * window.innerWidth, 
-            y: Math.random() * window.innerHeight,
-            opacity: 0 
-          }}
-          animate={{ 
-            y: [null, Math.random() * -100 - 50],
-            opacity: [0, 0.3, 0],
-            scale: [0, 1, 0]
-          }}
-          transition={{ 
-            duration: Math.random() * 10 + 10,
-            repeat: Infinity,
-            ease: "linear",
-            delay: Math.random() * 10
-          }}
-          className="absolute w-1 h-1 bg-gold rounded-full blur-[1px]"
-        />
-      ))}
-
-      {/* Large Ambient Orbs */}
       <motion.div
         animate={{
           scale: [1, 1.1, 1],
@@ -782,10 +739,6 @@ const HeroBackground = () => {
         }}
         className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] bg-gold/10 rounded-full blur-[120px]"
       />
-      
-      {/* Grain Overlay */}
-      <div className="absolute inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
-      
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(26,26,26,0.2)_100%)]" />
     </div>
   );
