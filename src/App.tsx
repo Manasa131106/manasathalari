@@ -380,7 +380,7 @@ const TiltWrapper = ({ children, intensity = 15 }: { children: React.ReactNode, 
 
 const ScrollingText = ({ text }: { text: string }) => {
   return (
-    <div className="absolute inset-0 flex items-center overflow-hidden pointer-events-none opacity-10 md:opacity-5 select-none z-0">
+    <div className="absolute inset-0 flex items-center overflow-hidden pointer-events-none opacity-20 md:opacity-5 select-none z-10">
       <ParallaxWrapper offset={-50}>
         <motion.div 
           initial={{ x: 0 }}
@@ -574,7 +574,7 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="absolute top-full left-0 w-full bg-beige dark:bg-zinc-900 shadow-2xl md:hidden overflow-hidden border-t border-charcoal/5"
+            className="absolute top-full left-0 w-full bg-beige dark:bg-zinc-900 shadow-2xl md:hidden overflow-y-auto max-h-[80vh] border-t border-charcoal/5"
           >
             <div className="flex flex-col p-8 space-y-6 items-center text-center">
               {navLinks.map((link) => (
@@ -819,6 +819,7 @@ const About = () => {
 };
 
 const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
+  const [flippedIndex, setFlippedIndex] = useState<number | null>(null);
   const hackathons = [
     {
       title: "Data Dynamo 2.0",
@@ -843,7 +844,7 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
   ];
 
   return (
-    <section id="hackathons" className="relative py-24 md:py-40 border-t border-charcoal/10 bg-beige overflow-hidden scroll-mt-[15vh]">
+    <section id="hackathons" className="relative py-24 md:py-40 border-t border-charcoal/10 bg-beige overflow-hidden scroll-mt-[30vh]">
       <FloatingShapes count={3} color="bg-gold/5" />
       <div className="container mx-auto px-6 relative z-10">
         <SectionHeading 
@@ -859,15 +860,22 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: idx * 0.2, duration: 0.8 }}
-              className="relative w-full group h-full"
+              className="relative w-full group h-full cursor-pointer"
               style={{ perspective: '1500px' }}
-              onMouseEnter={() => playSound(SOUNDS.TICK)}
-              onClick={() => playSound(SOUNDS.TAP)}
+              onMouseEnter={() => {
+                playSound(SOUNDS.TICK);
+                setFlippedIndex(idx);
+              }}
+              onMouseLeave={() => setFlippedIndex(null)}
+              onClick={() => {
+                playSound(SOUNDS.TAP);
+                setFlippedIndex(flippedIndex === idx ? null : idx);
+              }}
             >
               <motion.div
                 className="w-full h-full relative transition-all duration-700"
                 style={{ transformStyle: 'preserve-3d' }}
-                whileHover={{ rotateY: 180 }}
+                animate={{ rotateY: flippedIndex === idx ? 180 : 0 }}
               >
                 {/* Front Side */}
                 <div 
@@ -962,7 +970,7 @@ const Education = () => {
     {
       title: "Schooling",
       institution: "The Indo English High School",
-      location: "Swarnapuri, Miyapur, Hyderabad",
+      location: "Swarnapuri, Hyderabad",
       period: "Year: 2022",
       description: "Completed my schooling with a strong academic foundation and discipline, building the base for my future learning journey.",
       image: "https://i.ibb.co/QVVc6Yk/e-schll.jpg",
@@ -1300,7 +1308,7 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
   };
 
   return (
-    <footer id="contact" className="relative pt-24 md:pt-40 pb-12 overflow-hidden bg-charcoal text-beige scroll-mt-[15vh]">
+    <footer id="contact" className="relative pt-24 md:pt-40 pb-12 overflow-hidden bg-charcoal text-beige scroll-mt-[30vh]">
       <ScrollingText text="MANASA THALARI" />
       
       <div className="container mx-auto px-6 relative z-10">
