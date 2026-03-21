@@ -380,7 +380,7 @@ const TiltWrapper = ({ children, intensity = 15 }: { children: React.ReactNode, 
 
 const ScrollingText = ({ text }: { text: string }) => {
   return (
-    <div className="absolute inset-0 flex items-center overflow-hidden pointer-events-none opacity-5 select-none z-0">
+    <div className="absolute inset-0 flex items-center overflow-hidden pointer-events-none opacity-10 md:opacity-5 select-none z-0">
       <ParallaxWrapper offset={-50}>
         <motion.div 
           initial={{ x: 0 }}
@@ -574,9 +574,9 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="absolute top-full left-0 w-full bg-beige shadow-xl md:hidden overflow-hidden"
+            className="absolute top-full left-0 w-full bg-beige dark:bg-zinc-900 shadow-2xl md:hidden overflow-hidden border-t border-charcoal/5"
           >
-            <div className="flex flex-col p-6 space-y-4 items-center text-center">
+            <div className="flex flex-col p-8 space-y-6 items-center text-center">
               {navLinks.map((link) => (
                 <a 
                   key={link.name} 
@@ -843,7 +843,7 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
   ];
 
   return (
-    <section id="hackathons" className="relative py-24 md:py-40 border-t border-charcoal/10 bg-beige overflow-hidden">
+    <section id="hackathons" className="relative py-24 md:py-40 border-t border-charcoal/10 bg-beige overflow-hidden scroll-mt-[15vh]">
       <FloatingShapes count={3} color="bg-gold/5" />
       <div className="container mx-auto px-6 relative z-10">
         <SectionHeading 
@@ -851,7 +851,7 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
           subtitle="I actively participate in hackathons to challenge my thinking, collaborate with others, and build solutions under pressure. These experiences help me learn faster, adapt quickly, and turn ideas into real outcomes."
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto items-stretch">
           {hackathons.map((hackathon, idx) => (
             <motion.div 
               key={idx}
@@ -859,26 +859,26 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: idx * 0.2, duration: 0.8 }}
-              className="relative w-full group"
+              className="relative w-full group h-full"
               style={{ perspective: '1500px' }}
               onMouseEnter={() => playSound(SOUNDS.TICK)}
               onClick={() => playSound(SOUNDS.TAP)}
             >
               <motion.div
-                className="w-full relative transition-all duration-700"
+                className="w-full h-full relative transition-all duration-700"
                 style={{ transformStyle: 'preserve-3d' }}
                 whileHover={{ rotateY: 180 }}
               >
                 {/* Front Side */}
                 <div 
-                  className="relative w-full rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 shadow-xl flex flex-col border border-charcoal/5"
+                  className="relative w-full h-full rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 shadow-xl flex flex-col border border-charcoal/5"
                   style={{ backfaceVisibility: 'hidden' }}
                 >
-                  <div className="relative overflow-hidden bg-charcoal/5 dark:bg-beige/5">
+                  <div className="relative overflow-hidden bg-charcoal/5 dark:bg-beige/5 h-64">
                     <img 
                       src={hackathon.image} 
                       alt={hackathon.title} 
-                      className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-transparent to-transparent" />
@@ -917,7 +917,7 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
                   <div className="space-y-6">
                     <div>
                       <p className="text-gold/40 text-[10px] font-bold uppercase tracking-[0.2em] mb-3">Project & Contributions</p>
-                      <p className="text-base leading-relaxed opacity-90 font-medium">{hackathon.description}</p>
+                      <p className="text-sm leading-relaxed opacity-90 font-medium line-clamp-4">{hackathon.description}</p>
                     </div>
                     
                     <div>
@@ -932,7 +932,7 @@ const Hackathons = ({ playSound }: { playSound: (s: string) => void }) => {
                     </div>
                   </div>
 
-                  <div className="mt-10 pt-8 border-t border-white/10 flex justify-between items-center">
+                  <div className="mt-auto pt-8 border-t border-white/10 flex justify-between items-center">
                     <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/20">Details</span>
                     <ArrowLeft size={16} className="text-gold/40" />
                   </div>
@@ -961,8 +961,8 @@ const Education = () => {
   const education = [
     {
       title: "Schooling",
-      institution: "Indo English High School",
-      location: "Miyapur, Hyderabad",
+      institution: "The Indo English High School",
+      location: "Swarnapuri, Miyapur, Hyderabad",
       period: "Year: 2022",
       description: "Completed my schooling with a strong academic foundation and discipline, building the base for my future learning journey.",
       image: "https://i.ibb.co/QVVc6Yk/e-schll.jpg",
@@ -1300,7 +1300,7 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
   };
 
   return (
-    <footer id="contact" className="relative pt-24 md:pt-40 pb-12 overflow-hidden bg-charcoal text-beige">
+    <footer id="contact" className="relative pt-24 md:pt-40 pb-12 overflow-hidden bg-charcoal text-beige scroll-mt-[15vh]">
       <ScrollingText text="MANASA THALARI" />
       
       <div className="container mx-auto px-6 relative z-10">
@@ -1324,7 +1324,9 @@ const Footer = ({ playSound }: { playSound: (s: string) => void }) => {
                 whileTap={{ scale: 0.9 }}
                 onMouseEnter={() => playSound(SOUNDS.TICK)}
                 onClick={() => playSound(SOUNDS.TAP)}
-                href="mailto:manasa131106@gmail.com" 
+                href="https://mail.google.com/mail/?view=cm&fs=1&to=manasa131106@gmail.com" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-4 rounded-full border border-beige/20 hover:bg-beige hover:text-charcoal transition-all shadow-lg hover:shadow-gold/20"
               >
                 <Mail size={28} />

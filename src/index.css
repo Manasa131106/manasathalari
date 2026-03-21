@@ -45,7 +45,7 @@
 
 @layer utilities {
   .text-huge {
-    font-size: clamp(5rem, 20vw, 15rem);
+    font-size: clamp(4.95rem, 19.8vw, 14.85rem);
     line-height: 0.8;
   }
   .text-vertical {
