@@ -671,12 +671,12 @@ const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
       transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
       className="text-huge font-black tracking-tighter select-none absolute top-0 left-1/2 -translate-x-1/2 z-20 cursor-default whitespace-nowrap text-white dark:text-gold transition-colors duration-300 pointer-events-auto"
     >
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         <motion.span
           key={currentName}
-          initial={{ opacity: 1, y: 20 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 1, y: -20 }}
+          exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.4, ease: "easeInOut" }}
           className="inline-block"
         >
@@ -706,12 +706,12 @@ const HeroBackground = () => {
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
       <motion.div
         style={{
-          left: spotlightX,
-          top: spotlightY,
+          x: spotlightX,
+          y: spotlightY,
           translateX: '-50%',
           translateY: '-50%',
         }}
-        className="absolute w-[600px] h-[600px] bg-gold/10 rounded-full blur-[120px] hidden md:block mix-blend-soft-light"
+        className="absolute left-0 top-0 w-[600px] h-[600px] bg-gold/10 rounded-full blur-[120px] hidden md:block mix-blend-soft-light will-change-transform"
       />
       <motion.div
         animate={{
@@ -784,29 +784,26 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
               <TiltWrapper intensity={10}>
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.9, y: 50 }}
-                  animate={{ 
-                    opacity: 1, 
-                    scale: 1, 
-                    y: [0, -15, 0] 
-                  }}
-                  transition={{ 
-                    opacity: { delay: 0.5, duration: 1 },
-                    scale: { delay: 0.5, duration: 1 },
-                    y: { 
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 1, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl group bg-charcoal/5 dark:bg-beige/5"
+                >
+                  <motion.div
+                    animate={{ y: [0, -15, 0] }}
+                    transition={{ 
                       duration: 5, 
                       repeat: Infinity, 
                       ease: "easeInOut",
                       delay: 1.5
-                    }
-                  }}
-                  className="relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl group bg-charcoal/5 dark:bg-beige/5"
-                >
-                  <motion.img 
-                    src="https://i.ibb.co/8g39vtqf/my-pic.jpg" 
-                    alt="Manasa Portrait" 
-                    className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-[1.03]"
-                    referrerPolicy="no-referrer"
-                  />
+                    }}
+                  >
+                    <motion.img 
+                      src="https://i.ibb.co/8g39vtqf/my-pic.jpg" 
+                      alt="Manasa Portrait" 
+                      className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-[1.03]"
+                      referrerPolicy="no-referrer"
+                    />
+                  </motion.div>
                 </motion.div>
               </TiltWrapper>
             </div>
