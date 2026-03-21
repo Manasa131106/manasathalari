@@ -5,7 +5,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring, useTransform, useMotionValue } from 'motion/react';
-import { Typewriter } from 'react-simple-typewriter';
 import { 
   ArrowUpRight, 
   Github, 
@@ -679,73 +678,55 @@ const HeroBackground = () => {
 };
 
 const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
-  const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 500], [0, 100]);
-  const opacity = useTransform(scrollY, [0, 500], [1, 0]);
-
   return (
     <section id="home" className="relative min-h-screen flex flex-col justify-center items-center pt-20 overflow-hidden bg-olive text-beige">
       <HeroBackground />
       <ScrollingText text="MANASA THALARI" />
       <FloatingShapes />
       
-      <motion.div style={{ y, opacity }} className="container mx-auto px-6 relative z-10">
+      <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col items-center text-center relative">
-          <ParallaxWrapper offset={30}>
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="flex flex-wrap justify-center gap-4 md:gap-8 mb-8 text-xs font-bold uppercase tracking-[0.3em]"
-            >
-              <span className="text-gold">
-                <Typewriter
-                  words={['Data Analysis Learner', 'Working on Projects', 'Skills in Progress']}
-                  loop={0}
-                  cursor
-                  cursorStyle='_'
-                  typeSpeed={80}
-                  deleteSpeed={50}
-                  delaySpeed={2000}
-                />
-              </span>
-            </motion.div>
-          </ParallaxWrapper>
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex flex-wrap justify-center gap-4 md:gap-8 mb-8 text-xs font-bold uppercase tracking-[0.3em]"
+          >
+            <span className="text-gold">
+              Data Analysis Learner | Working on Projects | Skills in Progress
+            </span>
+          </motion.div>
 
           <div className="relative w-full flex flex-col items-center">
             {/* Image Layer - Lower Z-Index */}
             <div className="relative z-0">
-              <TiltWrapper intensity={10}>
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9, y: 50 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-                  className="relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl group bg-charcoal/5 dark:bg-beige/5"
-                >
-                  <motion.img 
-                    src="https://i.ibb.co/8g39vtqf/my-pic.jpg" 
-                    alt="Manasa Portrait" 
-                    className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-[1.03]"
-                    referrerPolicy="no-referrer"
-                  />
-                </motion.div>
-              </TiltWrapper>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl group bg-charcoal/5 dark:bg-beige/5"
+              >
+                <img 
+                  src="https://i.ibb.co/8g39vtqf/my-pic.jpg" 
+                  alt="Manasa Portrait" 
+                  className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-[1.03]"
+                  referrerPolicy="no-referrer"
+                />
+              </motion.div>
             </div>
 
             {/* "Manasa" Text Layer - Absolute with Higher Z-Index */}
             <div className="absolute top-[-5vw] md:top-[-4vw] left-0 w-full z-20">
-              <ParallaxWrapper offset={15}>
-                <div className="relative flex items-center justify-center">
-                  <h1 className="text-huge font-black tracking-tighter invisible select-none whitespace-nowrap">Manasa</h1>
-                  <HeroName playSound={playSound} />
-                </div>
-              </ParallaxWrapper>
+              <div className="relative flex items-center justify-center">
+                <h1 className="text-huge font-black tracking-tighter invisible select-none whitespace-nowrap">Manasa</h1>
+                <HeroName playSound={playSound} />
+              </div>
             </div>
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 1, duration: 0.8 }}
             className="mt-12 flex gap-6"
           >
@@ -779,7 +760,7 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
             </motion.a>
           </motion.div>
         </div>
-      </motion.div>
+      </div>
       
       <motion.div 
         initial={{ opacity: 0 }}
