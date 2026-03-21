@@ -206,13 +206,14 @@ const FloatingShapes = ({ count = 6, color = "bg-gold/5" }: { count?: number, co
             filter: 'blur(40px)',
           }}
           animate={{
-            x: [0, Math.random() * 100 - 50, 0],
-            y: [0, Math.random() * 100 - 50, 0],
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.6, 0.3],
+            x: [0, Math.random() * 150 - 75, 0],
+            y: [0, Math.random() * 150 - 75, 0],
+            scale: [1, 1.3, 1],
+            opacity: [0.2, 0.5, 0.2],
+            rotate: [0, 180, 360],
           }}
           transition={{
-            duration: Math.random() * 10 + 15,
+            duration: Math.random() * 15 + 20,
             repeat: Infinity,
             ease: "easeInOut"
           }}
@@ -293,6 +294,40 @@ const ParallaxWrapper = ({ children, offset = 20 }: { children: React.ReactNode,
 
   return (
     <motion.div style={{ x, y }}>
+      {children}
+    </motion.div>
+  );
+};
+
+const MagneticWrapper = ({ children, intensity = 0.5 }: { children: React.ReactNode, intensity?: number }) => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const springX = useSpring(x, { stiffness: 150, damping: 15 });
+  const springY = useSpring(y, { stiffness: 150, damping: 15 });
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const { clientX, clientY, currentTarget } = e;
+    const { left, top, width, height } = currentTarget.getBoundingClientRect();
+    const centerX = left + width / 2;
+    const centerY = top + height / 2;
+    const distanceX = clientX - centerX;
+    const distanceY = clientY - centerY;
+
+    x.set(distanceX * intensity);
+    y.set(distanceY * intensity);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ x: springX, y: springY }}
+    >
       {children}
     </motion.div>
   );
@@ -513,7 +548,15 @@ const Navbar = ({ isMuted, setIsMuted, playSound, isDarkMode, setIsDarkMode }: {
               className={`relative text-sm font-medium uppercase tracking-widest transition-colors group ${activeSection === link.href.slice(1) ? (isScrolled ? 'text-olive' : 'text-gold') : (isScrolled ? 'hover:text-olive' : 'hover:text-gold')}`}
             >
               {link.name}
-              <span className={`absolute -bottom-1 left-0 h-[2px] bg-gold transition-all duration-300 ${activeSection === link.href.slice(1) ? 'w-full' : 'w-0 group-hover:w-full'}`} />
+              {activeSection === link.href.slice(1) ? (
+                <motion.span 
+                  layoutId="nav-underline"
+                  className="absolute -bottom-1 left-0 w-full h-[2px] bg-gold"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              ) : (
+                <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-gold transition-all duration-300 group-hover:w-full" />
+              )}
             </a>
           ))}
           
@@ -623,9 +666,9 @@ const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
     <motion.h1
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      initial={{ y: 50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ y: 80, opacity: 0, skewY: 5 }}
+      animate={{ y: 0, opacity: 1, skewY: 0 }}
+      transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.4 }}
       className="text-huge font-black tracking-tighter select-none absolute top-0 left-1/2 -translate-x-1/2 z-20 cursor-default whitespace-nowrap text-white dark:text-gold transition-colors duration-300 pointer-events-auto"
     >
       <AnimatePresence mode="wait">
@@ -645,8 +688,74 @@ const HeroName = ({ playSound }: { playSound: (s: string) => void }) => {
 };
 
 const HeroBackground = () => {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const spotlightX = useSpring(mouseX, { stiffness: 50, damping: 20 });
+  const spotlightY = useSpring(mouseY, { stiffness: 50, damping: 20 });
+  
+  // Parallax values for background elements
+  const parallaxX = useTransform(mouseX, [0, window.innerWidth], [20, -20]);
+  const parallaxY = useTransform(mouseY, [0, window.innerHeight], [20, -20]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [mouseX, mouseY]);
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {/* Dynamic Spotlight */}
+      <motion.div
+        style={{
+          left: spotlightX,
+          top: spotlightY,
+          translateX: '-50%',
+          translateY: '-50%',
+        }}
+        className="absolute w-[800px] h-[800px] bg-gold/5 rounded-full blur-[150px] hidden md:block mix-blend-soft-light"
+      />
+
+      {/* Subtle Grid Pattern */}
+      <motion.div 
+        style={{ x: parallaxX, y: parallaxY }}
+        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
+        transition={{ type: "spring", stiffness: 50, damping: 30 }}
+      >
+        <div className="absolute inset-0" style={{ 
+          backgroundImage: `radial-gradient(circle at 2px 2px, #d4a94d 1px, transparent 0)`,
+          backgroundSize: '40px 40px' 
+        }} />
+      </motion.div>
+
+      {/* Floating Particles */}
+      {[...Array(15)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ 
+            x: Math.random() * window.innerWidth, 
+            y: Math.random() * window.innerHeight,
+            opacity: 0 
+          }}
+          animate={{ 
+            y: [null, Math.random() * -100 - 50],
+            opacity: [0, 0.3, 0],
+            scale: [0, 1, 0]
+          }}
+          transition={{ 
+            duration: Math.random() * 10 + 10,
+            repeat: Infinity,
+            ease: "linear",
+            delay: Math.random() * 10
+          }}
+          className="absolute w-1 h-1 bg-gold rounded-full blur-[1px]"
+        />
+      ))}
+
+      {/* Large Ambient Orbs */}
       <motion.div
         animate={{
           scale: [1, 1.1, 1],
@@ -673,6 +782,10 @@ const HeroBackground = () => {
         }}
         className="absolute -bottom-[20%] -right-[10%] w-[70%] h-[70%] bg-gold/10 rounded-full blur-[120px]"
       />
+      
+      {/* Grain Overlay */}
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none mix-blend-overlay" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
+      
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(26,26,26,0.2)_100%)]" />
     </div>
   );
@@ -718,8 +831,21 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
               <TiltWrapper intensity={10}>
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.9, y: 50 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                  animate={{ 
+                    opacity: 1, 
+                    scale: 1, 
+                    y: [0, -15, 0] 
+                  }}
+                  transition={{ 
+                    opacity: { delay: 0.5, duration: 1 },
+                    scale: { delay: 0.5, duration: 1 },
+                    y: { 
+                      duration: 5, 
+                      repeat: Infinity, 
+                      ease: "easeInOut",
+                      delay: 1.5
+                    }
+                  }}
                   className="relative w-full max-w-md overflow-hidden rounded-2xl shadow-2xl group bg-charcoal/5 dark:bg-beige/5"
                 >
                   <motion.img 
@@ -746,37 +872,53 @@ const Hero = ({ playSound }: { playSound: (s: string) => void }) => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.8 }}
+            transition={{ delay: 1.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="mt-12 flex gap-6"
           >
-            <motion.a 
-              href="#hackathons"
-              whileHover={{ 
-                scale: 1.05, 
-                boxShadow: "0 0 30px rgba(212, 169, 77, 0.6)",
-                backgroundColor: "#e5b858"
-              }}
-              whileTap={{ scale: 0.95 }}
-              onMouseEnter={() => playSound(SOUNDS.TICK)}
-              onClick={() => playSound(SOUNDS.TAP)}
-              className="px-6 py-3 bg-gold text-charcoal font-bold uppercase tracking-widest rounded-full shadow-lg transition-all text-sm"
-            >
-              View Projects
-            </motion.a>
-            <motion.a 
-              href="#contact"
-              whileHover={{ 
-                scale: 1.05, 
-                backgroundColor: "rgba(248, 246, 242, 0.2)",
-                boxShadow: "0 0 20px rgba(248, 246, 242, 0.1)"
-              }}
-              whileTap={{ scale: 0.95 }}
-              onMouseEnter={() => playSound(SOUNDS.TICK)}
-              onClick={() => playSound(SOUNDS.TAP)}
-              className="px-6 py-3 border border-beige/30 text-beige font-bold uppercase tracking-widest rounded-full transition-all text-sm"
-            >
-              Let's Talk
-            </motion.a>
+            <MagneticWrapper intensity={0.2}>
+              <motion.a 
+                href="#hackathons"
+                whileHover={{ 
+                  scale: 1.05, 
+                  boxShadow: "0 0 30px rgba(212, 169, 77, 0.6)",
+                  backgroundColor: "#e5b858"
+                }}
+                whileTap={{ scale: 0.95 }}
+                onMouseEnter={() => playSound(SOUNDS.TICK)}
+                onClick={() => playSound(SOUNDS.TAP)}
+                className="relative overflow-hidden px-6 py-3 bg-gold text-charcoal font-bold uppercase tracking-widest rounded-full shadow-lg transition-all text-sm group"
+              >
+                <span className="relative z-10">View Projects</span>
+                <motion.div 
+                  initial={{ x: "-100%" }}
+                  whileHover={{ x: "100%" }}
+                  transition={{ duration: 0.6 }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none"
+                />
+              </motion.a>
+            </MagneticWrapper>
+            <MagneticWrapper intensity={0.2}>
+              <motion.a 
+                href="#contact"
+                whileHover={{ 
+                  scale: 1.05, 
+                  backgroundColor: "rgba(248, 246, 242, 0.2)",
+                  boxShadow: "0 0 20px rgba(248, 246, 242, 0.1)"
+                }}
+                whileTap={{ scale: 0.95 }}
+                onMouseEnter={() => playSound(SOUNDS.TICK)}
+                onClick={() => playSound(SOUNDS.TAP)}
+                className="relative overflow-hidden px-6 py-3 border border-beige/30 text-beige font-bold uppercase tracking-widest rounded-full transition-all text-sm group"
+              >
+                <span className="relative z-10">Let's Talk</span>
+                <motion.div 
+                  initial={{ x: "-100%" }}
+                  whileHover={{ x: "100%" }}
+                  transition={{ duration: 0.6 }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
+                />
+              </motion.a>
+            </MagneticWrapper>
           </motion.div>
         </div>
       </motion.div>
@@ -816,14 +958,20 @@ const About = () => {
             subtitle="I’m a B.Tech student beginning my journey in Data Analysis, learning to see beyond numbers and uncover the stories within data."
             align="center"
           />
-          <div className="space-y-6 text-lg md:text-xl text-charcoal/80 leading-relaxed mt-12">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="space-y-6 text-lg md:text-xl text-charcoal/80 leading-relaxed mt-12"
+          >
             <p>
               I’m building my skills in Excel, SQL, and data visualization—focused on turning raw data into meaningful insights, while growing through curiosity and consistency every day.
             </p>
             <p>
               Currently, I’m an intern at EvolveXspaces, where I’m gaining hands-on experience and working with real-world data.
             </p>
-          </div>
+          </motion.div>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 mt-20">
@@ -833,18 +981,19 @@ const About = () => {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.2 + idx * 0.1, duration: 0.8 }}
-                whileHover={{ y: -5, color: '#d4a94d' }}
+                transition={{ delay: 0.2 + idx * 0.1, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -8, transition: { duration: 0.3 } }}
                 className="border-t border-charcoal/20 pt-8 group cursor-default"
               >
                 <motion.div 
                   initial={{ scale: 0.8 }}
                   whileInView={{ scale: 1 }}
-                  className="text-3xl md:text-4xl font-black mb-2 leading-tight group-hover:scale-110 transition-transform origin-left"
+                  transition={{ delay: 0.4 + idx * 0.1, duration: 0.5 }}
+                  className="text-3xl md:text-4xl font-black mb-2 leading-tight group-hover:text-gold transition-colors origin-left"
                 >
                   {stat.value}
                 </motion.div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60 group-hover:text-gold transition-colors">{stat.label}</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-charcoal/60 group-hover:text-gold/80 transition-colors">{stat.label}</div>
               </motion.div>
             ))}
         </div>
@@ -1055,7 +1204,13 @@ const Education = () => {
                 whileHover={{ scale: 1.02 }}
                 className="w-full lg:w-1/2"
               >
-                <div className="relative overflow-hidden rounded-3xl shadow-2xl group bg-charcoal/5 dark:bg-beige/5">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5 }}
+                  className="relative overflow-hidden rounded-3xl shadow-2xl group bg-charcoal/5 dark:bg-beige/5"
+                >
                   <img 
                     src={edu.image} 
                     alt={edu.title} 
@@ -1063,7 +1218,7 @@ const Education = () => {
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-olive/5 group-hover:bg-transparent transition-colors duration-300" />
-                </div>
+                </motion.div>
               </motion.div>
 
               {/* Content Side */}
@@ -1135,8 +1290,17 @@ const Skills = () => {
               {technicalSkills.map((skill, idx) => (
                 <motion.div 
                   key={idx} 
-                  whileHover={{ scale: 1.05 }}
-                  className="px-5 py-3 rounded-xl border border-beige/20 text-lg font-bold transition-all cursor-default flex items-center gap-3 hover:bg-beige hover:text-olive"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.05, duration: 0.5 }}
+                  whileHover={{ 
+                    scale: 1.05,
+                    backgroundColor: "rgba(248, 246, 242, 1)",
+                    color: "rgba(107, 122, 94, 1)",
+                    boxShadow: "0 10px 20px rgba(0,0,0,0.1)"
+                  }}
+                  className="px-5 py-3 rounded-xl border border-beige/20 text-lg font-bold transition-all cursor-default flex items-center gap-3"
                 >
                   <span className="text-gold opacity-70">{skill.icon}</span>
                   {skill.name}
@@ -1169,8 +1333,17 @@ const Skills = () => {
               {specialSkills.map((skill, idx) => (
                 <motion.div 
                   key={idx} 
-                  whileHover={{ scale: 1.05 }}
-                  className="px-5 py-3 rounded-xl border border-beige/20 text-lg font-bold transition-all cursor-default flex items-center gap-3 hover:bg-beige hover:text-olive"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.05, duration: 0.5 }}
+                  whileHover={{ 
+                    scale: 1.05,
+                    backgroundColor: "rgba(248, 246, 242, 1)",
+                    color: "rgba(107, 122, 94, 1)",
+                    boxShadow: "0 10px 20px rgba(0,0,0,0.1)"
+                  }}
+                  className="px-5 py-3 rounded-xl border border-beige/20 text-lg font-bold transition-all cursor-default flex items-center gap-3"
                 >
                   <span className="text-gold opacity-70">{skill.icon}</span>
                   {skill.name}
@@ -1229,15 +1402,32 @@ const Gallery = ({ playSound }: { playSound: (s: string) => void }) => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true, margin: "-50px" }}
-                  transition={{ delay: idx * 0.1, duration: 0.8 }}
+                  transition={{ delay: idx * 0.1, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   onMouseEnter={() => playSound(SOUNDS.TICK)}
                   onClick={() => handleImageClick(img)}
                   className="rounded-3xl overflow-hidden shadow-xl cursor-pointer group relative"
                 >
-                  <img src={img.url} alt={`Gallery ${idx}`} className="w-full h-auto object-contain bg-charcoal/5 dark:bg-beige/5 transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
-                  <div className="absolute inset-0 bg-olive/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <span className="bg-beige text-charcoal px-6 py-2 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg">View Details</span>
-                  </div>
+                  <motion.img 
+                    src={img.url} 
+                    alt={`Gallery ${idx}`} 
+                    className="w-full h-auto object-contain bg-charcoal/5 dark:bg-beige/5 transition-transform duration-700 group-hover:scale-110" 
+                    referrerPolicy="no-referrer" 
+                  />
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0 bg-olive/40 backdrop-blur-[2px] flex items-center justify-center"
+                  >
+                    <motion.span 
+                      initial={{ y: 20, opacity: 0 }}
+                      whileHover={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                      className="bg-beige text-charcoal px-6 py-2 rounded-full font-bold uppercase tracking-widest text-xs shadow-lg"
+                    >
+                      View Details
+                    </motion.span>
+                  </motion.div>
                 </motion.div>
               </TiltWrapper>
             </div>
